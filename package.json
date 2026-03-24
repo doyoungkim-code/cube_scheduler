@@ -1,0 +1,48 @@
+{
+  "name": "scheduler",
+  "version": "1.0.0",
+  "description": "Personal Scheduler App",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"node scripts/build-electron.js && electron .\"",
+    "build": "vite build && node scripts/build-electron.js",
+    "electron:build": "npm run build && electron-builder",
+    "electron:dev": "node scripts/build-electron.js && electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.8.1",
+    "esbuild": "^0.27.4",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
+  },
+  "build": {
+    "appId": "com.personal.scheduler",
+    "productName": "Scheduler",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "dir",
+      "icon": "public/icon.png",
+      "signAndEditExecutable": false
+    }
+  }
+}
