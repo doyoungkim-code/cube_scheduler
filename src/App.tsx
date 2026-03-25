@@ -22,14 +22,15 @@ const ROOM_MAP: Record<string, string> = {
 }
 
 function App() {
-  const today = todayKey()
+  const [now, setNow] = useState(new Date())
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
-  const todayDataAux = useDayData(today)
+  // 다른 날짜를 볼 때만 오늘 데이터를 별도로 로드 (같은 키일 때 경합 방지)
+  const todayDataAux = useDayData(selectedDate === today ? '__unused__' : today)
   const [showRoutineEditor, setShowRoutineEditor] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
-  const [now, setNow] = useState(new Date())
   const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {

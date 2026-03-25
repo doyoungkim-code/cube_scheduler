@@ -21,13 +21,19 @@ export class Store {
     if (!fs.existsSync(filePath)) {
       return null
     }
-    const raw = fs.readFileSync(filePath, 'utf-8')
-    return JSON.parse(raw)
+    try {
+      const raw = fs.readFileSync(filePath, 'utf-8')
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
   }
 
   save(key: string, data: unknown): boolean {
     const filePath = this.getFilePath(key)
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8')
+    const tmpPath = filePath + '.tmp'
+    fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8')
+    fs.renameSync(tmpPath, filePath)
     return true
   }
 
