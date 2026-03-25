@@ -33,6 +33,7 @@ body {
 
 .app-layout {
   display: flex; flex: 1; overflow: hidden;
+  position: relative; z-index: 0;
 }
 
 /* 왼쪽: 아바타 영역 */
@@ -453,6 +454,7 @@ body {
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.3);
   display: flex; align-items: center; justify-content: center; z-index: 100;
+  -webkit-app-region: no-drag;
 }
 .modal {
   background: #ffffff; border-radius: var(--radius);
