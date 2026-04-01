@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { Activity, DayData, Routine, TimeSlot } from '../types/schedule'
+import type { Ticket } from '../types/kanban'
 import HourDetail from './HourDetail'
 
 interface TimeTableProps {
@@ -7,8 +8,10 @@ interface TimeTableProps {
   rawSlots: Record<number, TimeSlot>
   routines: Routine[]
   selectedActivity: Activity | null
+  tickets: Ticket[]
   onSlotChange: (min: number, slot: TimeSlot | null) => void
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
+  onTicketDrop?: (ticketId: string, slotMin: number) => void
 }
 
 const TOTAL_MIN = 1440
@@ -30,9 +33,10 @@ function clampMin(m: number): number {
   return Math.max(0, Math.min(1430, m))
 }
 
-function TimeTable({ day, rawSlots, routines, selectedActivity, onSlotChange, onSlotRangeChange }: TimeTableProps) {
+function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, onSlotChange, onSlotRangeChange, onTicketDrop }: TimeTableProps) {
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const blocksRef = useRef<HTMLDivElement>(null)
+  const [ticketDragOver, setTicketDragOver] = useState<number | null>(null)
 
   // 페인트 드래그 상태
   const [paintDrag, setPaintDrag] = useState<{ startMin: number; currentMin: number } | null>(null)
@@ -158,8 +162,29 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, onSlotChange, on
       </div>
 
       <div
-        className={`tt-track ${isPaintMode ? 'tt-track--paint' : ''}`}
+        className={`tt-track ${isPaintMode ? 'tt-track--paint' : ''} ${ticketDragOver !== null ? 'tt-track--ticket-drop' : ''}`}
         onMouseDown={handleMouseDown}
+        onDragOver={e => {
+          const ticketId = e.dataTransfer.types.includes('ticket-id')
+          if (!ticketId) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'move'
+          const m = minFromMouse(e.clientX)
+          setTicketDragOver(m)
+        }}
+        onDragLeave={() => setTicketDragOver(null)}
+        onDrop={e => {
+          const ticketId = e.dataTransfer.getData('ticket-id')
+          const ticketStatus = e.dataTransfer.getData('ticket-status')
+          if (!ticketId || ticketStatus !== 'progress') {
+            setTicketDragOver(null)
+            return
+          }
+          e.preventDefault()
+          const m = minFromMouse(e.clientX)
+          onTicketDrop?.(ticketId, m)
+          setTicketDragOver(null)
+        }}
       >
         <div className="tt-now-line" style={{ left: `${nowPct}%` }}>
           <div className="tt-now-dot" />
@@ -176,9 +201,12 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, onSlotChange, on
             const hour = Math.floor(m / 60)
             const isSelectedHour = selectedHour === hour
             const inDragRange = paintDrag && m >= dragStart && m < dragEnd
+            const isTicketDropTarget = ticketDragOver !== null && m === ticketDragOver
 
             let blockStyle: React.CSSProperties | undefined
-            if (inDragRange && selectedActivity) {
+            if (isTicketDropTarget) {
+              blockStyle = { backgroundColor: '#1a73e8', opacity: 0.6 }
+            } else if (inDragRange && selectedActivity) {
               if (selectedActivity.id === 'eraser') {
                 blockStyle = { backgroundColor: '#ff3b30', opacity: 0.4 }
               } else {
@@ -193,7 +221,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, onSlotChange, on
             return (
               <div
                 key={m}
-                className={`tt-block ${slot ? 'tt-block--filled' : ''} ${isRoutineOnly ? 'tt-block--routine' : ''} ${isHourStart ? 'tt-block--hour-start' : ''} ${isSelectedHour ? 'tt-block--selected-hour' : ''} ${inDragRange ? 'tt-block--drag-range' : ''}`}
+                className={`tt-block ${slot ? 'tt-block--filled' : ''} ${isRoutineOnly ? 'tt-block--routine' : ''} ${isHourStart ? 'tt-block--hour-start' : ''} ${isSelectedHour ? 'tt-block--selected-hour' : ''} ${inDragRange ? 'tt-block--drag-range' : ''} ${isTicketDropTarget ? 'tt-block--ticket-drop' : ''}`}
                 style={blockStyle}
                 onClick={() => handleBlockClick(m)}
                 title={isRoutineOnly ? `루틴: ${routine.name}` : undefined}
@@ -255,6 +283,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, onSlotChange, on
           day={day}
           rawSlots={rawSlots}
           selectedActivity={selectedActivity}
+          tickets={tickets}
           onSlotChange={onSlotChange}
           onSlotRangeChange={onSlotRangeChange}
           onClose={() => setSelectedHour(null)}
@@ -266,6 +295,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, onSlotChange, on
           routineMap={routineMap}
           nowMin={nowMin}
           nowSlotMin={nowSlotMin}
+          tickets={tickets}
           onSlotRangeChange={onSlotRangeChange}
           onSlotChange={onSlotChange}
         />
@@ -278,6 +308,7 @@ interface TaskGroup {
   label: string
   color: string
   detail: string
+  ticketId: string | undefined
   startMin: number
   endMin: number
   isRoutine: boolean
@@ -290,6 +321,7 @@ interface CurrentTasksProps {
   routineMap: Record<number, Routine>
   nowMin: number
   nowSlotMin: number
+  tickets: Ticket[]
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
   onSlotChange: (min: number, slot: TimeSlot | null) => void
 }
@@ -311,12 +343,14 @@ function groupAllSlots(day: DayData, rawSlots: Record<number, TimeSlot>, routine
       current.endMin = m + 10
       if (m === nowSlotMin) current.containsNow = true
       if (slot.detail && !current.detail) current.detail = slot.detail
+      if (slot.ticketId && !current.ticketId) current.ticketId = slot.ticketId
     } else {
       if (current) groups.push(current)
       current = {
         label: slot.label,
         color: slot.color,
         detail: slot.detail ?? '',
+        ticketId: slot.ticketId,
         startMin: m,
         endMin: m + 10,
         isRoutine,
@@ -328,7 +362,25 @@ function groupAllSlots(day: DayData, rawSlots: Record<number, TimeSlot>, routine
   return groups
 }
 
-function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, onSlotRangeChange, onSlotChange }: CurrentTasksProps) {
+function getTicketSummary(t: Ticket): string | null {
+  const f = t.activityFields
+  if (f.type === 'exercise') {
+    const p: string[] = []
+    if (f.data.exerciseType) p.push(f.data.exerciseType)
+    if (f.data.km) p.push(`${f.data.km}km`)
+    if (f.data.minutes) p.push(`${f.data.minutes}min`)
+    return p.length ? p.join(' / ') : null
+  }
+  if (f.type === 'algorithm') {
+    const p: string[] = []
+    if (f.data.problemNumber) p.push(`#${f.data.problemNumber}`)
+    if (f.data.solveTime) p.push(f.data.solveTime)
+    return p.length ? p.join(' / ') : null
+  }
+  return null
+}
+
+function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, tickets, onSlotRangeChange, onSlotChange }: CurrentTasksProps) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [editing, setEditing] = useState(false)
   const [editDetail, setEditDetail] = useState('')
@@ -336,7 +388,8 @@ function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, onSlotRan
   const hourStart = Math.floor(nowMin / 60) * 60
   const hourEnd = hourStart + 60
   const allGroups = groupAllSlots(day, rawSlots, routineMap, nowSlotMin)
-  const groups = allGroups.filter(g => g.startMin < hourEnd && g.endMin > hourStart)
+  // 루틴 제외, 수동 입력만 표시
+  const groups = allGroups.filter(g => !g.isRoutine && g.startMin < hourEnd && g.endMin > hourStart)
 
   const handleExpand = (idx: number) => {
     if (expandedIdx === idx) {
@@ -355,19 +408,17 @@ function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, onSlotRan
     setEditing(false)
   }
 
-  const handleStartEdit = (g: TaskGroup) => {
-    setEditing(true)
-    setEditDetail(g.detail)
-  }
-
   const handleSaveDetail = (g: TaskGroup) => {
     for (let m = g.startMin; m < g.endMin; m += 10) {
       const slot = day.slots[m]
-      if (slot) {
-        onSlotChange(m, { ...slot, detail: editDetail })
-      }
+      if (slot) onSlotChange(m, { ...slot, detail: editDetail })
     }
     setEditing(false)
+  }
+
+  const duration = (g: TaskGroup) => {
+    const mins = g.endMin - g.startMin
+    return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ''}` : `${mins}m`
   }
 
   return (
@@ -382,58 +433,78 @@ function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, onSlotRan
         <div className="tt-current-empty">등록된 일정 없음</div>
       ) : (
         <div className="tt-current-groups">
-          {groups.map((g, i) => (
-            <div key={i} className={`tt-group ${g.containsNow ? 'tt-group--now' : ''}`}>
-              <div className="tt-group-row" onClick={() => handleExpand(i)}>
-                <span className="tt-group-color" style={{ backgroundColor: g.color }} />
-                <span className="tt-group-label">{g.label}</span>
-                <span className="tt-group-time">{fmtMin(g.startMin)}~{fmtMin(g.endMin)}</span>
-                <span className="tt-group-duration">
-                  {(g.endMin - g.startMin) / 10 * 10}분
-                </span>
-                {g.isRoutine && <span className="tt-group-badge">루틴</span>}
-                {!g.isRoutine && (
-                  <button
-                    className="tt-group-delete"
-                    onClick={e => { e.stopPropagation(); handleDelete(g) }}
-                    title="삭제"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              {expandedIdx === i && (
-                <div className="tt-group-detail">
-                  {editing ? (
-                    <div className="tt-group-edit">
-                      <textarea
-                        className="tt-group-textarea"
-                        value={editDetail}
-                        onChange={e => setEditDetail(e.target.value)}
-                        placeholder="세부사항 입력..."
-                        autoFocus
-                      />
-                      <div className="tt-group-edit-actions">
-                        <button className="btn-sm btn-save" onClick={() => handleSaveDetail(g)}>저장</button>
-                        <button className="btn-sm btn-cancel" onClick={() => setEditing(false)}>취소</button>
+          {groups.map((g, i) => {
+            const linkedTicket = g.ticketId ? tickets.find(t => t.id === g.ticketId) : null
+            const displayTitle = linkedTicket ? linkedTicket.title : g.label
+            const displayDesc = linkedTicket ? linkedTicket.description : g.detail
+            const ticketDetail = linkedTicket ? getTicketSummary(linkedTicket) : null
+
+            return (
+              <div
+                key={i}
+                className={`tt-ticket ${g.containsNow ? 'tt-ticket--now' : ''}`}
+                onClick={() => handleExpand(i)}
+              >
+                <div className="tt-ticket-stripe" style={{ background: g.color }} />
+
+                <div className="tt-ticket-body">
+                  <div className="tt-ticket-header">
+                    <span className="tt-ticket-type" style={{ background: g.color }}>{g.label}</span>
+                    <span className="tt-ticket-time">{fmtMin(g.startMin)}~{fmtMin(g.endMin)}</span>
+                    <span className="tt-ticket-duration">{duration(g)}</span>
+                    <button
+                      className="tt-ticket-delete"
+                      onClick={e => { e.stopPropagation(); handleDelete(g) }}
+                      title="삭제"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="tt-ticket-title">{displayTitle}</div>
+
+                  {displayDesc && (
+                    <div className="tt-ticket-desc">{displayDesc}</div>
+                  )}
+                  {ticketDetail && (
+                    <div className="tt-ticket-detail-line">{ticketDetail}</div>
+                  )}
+                  {linkedTicket?.why && (
+                    <div className="tt-ticket-why">WHY: {linkedTicket.why}</div>
+                  )}
+
+                  {expandedIdx === i && !linkedTicket ? (
+                    editing ? (
+                      <div className="tt-ticket-edit" onClick={e => e.stopPropagation()}>
+                        <textarea
+                          className="tt-group-textarea"
+                          value={editDetail}
+                          onChange={e => setEditDetail(e.target.value)}
+                          placeholder="상세 내용..."
+                          autoFocus
+                        />
+                        <div className="tt-group-edit-actions">
+                          <button className="btn-sm btn-save" onClick={() => handleSaveDetail(g)}>저장</button>
+                          <button className="btn-sm btn-cancel" onClick={() => setEditing(false)}>취소</button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="tt-group-view">
-                      {g.detail ? (
-                        <p className="tt-group-detail-text">{g.detail}</p>
-                      ) : (
-                        <p className="tt-group-detail-empty">세부사항 없음</p>
-                      )}
-                      {!g.isRoutine && (
-                        <button className="btn-sm btn-save" onClick={() => handleStartEdit(g)}>수정</button>
-                      )}
-                    </div>
+                    ) : (
+                      <div className="tt-ticket-detail-area">
+                        <p className={g.detail ? 'tt-ticket-detail' : 'tt-ticket-detail-empty'}>
+                          {g.detail || '상세 내용 없음'}
+                        </p>
+                        <button className="btn-sm btn-save" onClick={e => { e.stopPropagation(); setEditing(true); setEditDetail(g.detail) }}>수정</button>
+                      </div>
+                    )
+                  ) : null}
+
+                  {linkedTicket && (
+                    <div className="tt-ticket-linked">#{tickets.sort((a, b) => a.createdAt.localeCompare(b.createdAt)).findIndex(t => t.id === linkedTicket.id) + 1} 티켓 연결됨</div>
                   )}
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

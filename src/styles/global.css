@@ -83,13 +83,26 @@ body {
   pointer-events: none;
 }
 
-/* 오른쪽: 타임테이블 영역 */
+/* 오른쪽: 타임테이블 + 칸반 영역 */
 .app-right {
   flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 48px 16px 12px;
-  overflow-y: auto;
+  display: flex; flex-direction: column;
+  padding: 44px 0 0;
+  overflow: hidden;
   position: relative;
+}
+.app-right-upper {
+  flex: 0 0 auto;
+  max-height: 45%;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 4px 16px 8px;
+  overflow-y: auto;
+}
+.app-right-lower {
+  flex: 1; min-height: 200px;
+  overflow-y: auto;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--border);
 }
 .app-right::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 44px;
@@ -373,6 +386,72 @@ body {
 .tt-group-textarea:focus { border-color: var(--accent); }
 .tt-group-edit-actions { display: flex; gap: 4px; justify-content: flex-end; }
 
+/* ===== Timeline Ticket Style ===== */
+.tt-ticket {
+  display: flex; align-items: stretch;
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; cursor: pointer;
+  transition: box-shadow 0.1s;
+}
+.tt-ticket:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+.tt-ticket--now { border-left: none; box-shadow: inset 3px 0 0 var(--accent); }
+.tt-ticket-stripe { width: 4px; flex-shrink: 0; }
+.tt-ticket-body {
+  flex: 1; min-width: 0; padding: 5px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.tt-ticket-header {
+  display: flex; align-items: center; gap: 5px;
+}
+.tt-ticket-type {
+  font-size: 8px; font-weight: 700; color: #fff;
+  padding: 0 6px; border-radius: 6px; white-space: nowrap;
+}
+.tt-ticket-time {
+  font-family: var(--mono); font-size: 10px; color: var(--text-secondary);
+}
+.tt-ticket-duration {
+  font-size: 9px; color: var(--text-muted); margin-left: auto;
+}
+.tt-ticket-delete {
+  background: none; border: none; font-size: 11px;
+  color: var(--text-muted); cursor: pointer; padding: 1px 3px;
+  border-radius: 3px; line-height: 1;
+}
+.tt-ticket-delete:hover { background: #ff3b30; color: #fff; }
+.tt-ticket-title {
+  font-size: 12px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tt-ticket-desc {
+  font-size: 9px; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tt-ticket-detail-area {
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.tt-ticket-detail {
+  font-size: 10px; flex: 1; white-space: pre-wrap; line-height: 1.5;
+}
+.tt-ticket-detail-empty {
+  font-size: 10px; color: var(--text-muted); flex: 1;
+}
+.tt-ticket-edit {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.tt-ticket-detail-line {
+  font-size: 9px; color: var(--text-muted); font-family: var(--mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tt-ticket-why {
+  font-size: 9px; color: var(--text-secondary); font-style: italic;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tt-ticket-linked {
+  font-size: 8px; color: var(--accent); font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
 /* ===== Hour Detail Panel ===== */
 .hour-detail {
   background: var(--bg-secondary); border-radius: var(--radius);
@@ -566,6 +645,346 @@ body {
   background: var(--accent);
 }
 .cal-cell--selected .cal-dot { background: #fff; }
+
+/* ===== Kanban Board ===== */
+.kanban {
+  display: flex; flex-direction: column; min-height: 180px;
+  background: #ffffff; border-radius: var(--radius);
+  padding: 10px 12px;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-hover: #eeeeee;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --accent: #1a73e8;
+  --accent-light: #e8f0fe;
+  --border: #e0e0e0;
+  color: var(--text-primary);
+}
+.kanban-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.kanban-title { font-size: 14px; font-weight: 600; }
+.kanban-columns {
+  display: flex; gap: 10px; flex: 1; min-height: 0;
+}
+
+/* Kanban Column */
+.kanban-column {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg-secondary); border-radius: var(--radius);
+  overflow: hidden;
+}
+.kanban-column--drag-over {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.kanban-column-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+}
+.kanban-column-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.kanban-column-count {
+  font-size: 10px; font-weight: 600; padding: 1px 6px;
+  background: var(--border); border-radius: 8px; color: var(--text-secondary);
+}
+.kanban-column-body {
+  flex: 1; overflow-y: auto; padding: 6px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+/* ===== Cinema Ticket Card (기차표 스타일) ===== */
+.cinema-ticket {
+  display: flex; flex-direction: row; align-items: stretch;
+  background: #f5f0e6;
+  border-radius: 6px;
+  cursor: grab;
+  transition: box-shadow 0.15s, transform 0.1s, opacity 0.15s;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  position: relative;
+  border: 1px solid #d8d0c0;
+}
+.cinema-ticket:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.cinema-ticket:active { cursor: grabbing; transform: none; }
+.cinema-ticket--dragging { opacity: 0.4; }
+
+/* === 왼쪽 메인 바디 === */
+.cinema-ticket-body {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+}
+
+/* 상단 컬러 헤더 바 */
+.cinema-ticket-topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 8px;
+  border-radius: 5px 0 0 0;
+}
+.cinema-ticket-topbar-title {
+  font-size: 10px; font-weight: 800; color: #fff;
+  letter-spacing: 1px; text-transform: uppercase;
+  flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cinema-ticket-topbar-right {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 6px;
+  border-left: 1px solid rgba(255,255,255,0.25);
+}
+.cinema-ticket-topbar-right span {
+  font-size: 6px; font-weight: 600; color: rgba(255,255,255,0.6);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.cinema-ticket-topbar-right strong {
+  font-size: 9px; font-weight: 800; color: #fff;
+  font-family: var(--mono);
+}
+
+/* 본문 내용 */
+.cinema-ticket-content {
+  flex: 1; padding: 4px 8px 2px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.cinema-ticket-title {
+  font-size: 12px; font-weight: 700; color: #3a3428;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cinema-ticket-desc {
+  font-size: 9px; color: #7a7060; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cinema-ticket-detail {
+  font-size: 9px; color: #9a8e78; font-family: var(--mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* 하단 바코드 텍스트 + 상태 */
+.cinema-ticket-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 8px 3px;
+  border-top: 1px solid #e0d8c8;
+}
+.cinema-ticket-barcode-text {
+  font-size: 8px; font-weight: 700; color: #b0a890;
+  font-family: var(--mono); letter-spacing: 1.5px;
+}
+.cinema-ticket-footer-class {
+  font-size: 7px; font-weight: 800; color: #a09880;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+
+/* === 세로 절취선 === */
+.cinema-ticket-perforation {
+  width: 2px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  position: relative;
+  transition: width 0.15s ease;
+}
+.cinema-ticket-perf-notch {
+  width: 10px; height: 10px;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: absolute; left: 50%; transform: translateX(-50%);
+}
+.cinema-ticket-perf-notch--top { top: -5px; }
+.cinema-ticket-perf-notch--bottom { bottom: -5px; }
+.cinema-ticket-perf-dots {
+  flex: 1; width: 0;
+  border-left: 2px dashed #ccc5b5;
+  margin: 7px 0;
+}
+
+/* === 오른쪽 스텁 (넓은 컬러 영역) === */
+.cinema-ticket-stub {
+  width: 72px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 6px 6px;
+  gap: 2px;
+  border-radius: 0 6px 6px 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: left center;
+  position: relative;
+  color: #fff;
+}
+.cinema-ticket-stub-label {
+  font-size: 14px; font-weight: 900; color: rgba(255,255,255,0.9);
+  font-family: var(--mono); letter-spacing: 1px;
+}
+.cinema-ticket-stub-activity {
+  font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.7);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 100%;
+}
+.cinema-ticket-stub-status {
+  font-size: 7px; font-weight: 600; color: rgba(255,255,255,0.5);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+/* 오른쪽 톱니 가장자리 */
+.cinema-ticket-zigzag {
+  position: absolute; top: 0; right: -1px; bottom: 0; width: 6px;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0px,
+    transparent 2px,
+    var(--bg-secondary) 2px,
+    var(--bg-secondary) 4px
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px, black 0px, black 3px, transparent 3px,
+    transparent 5px, black 5px, black 8px, transparent 8px
+  );
+  mask-size: 6px 10px;
+  mask-repeat: repeat-y;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0px, black 0px, black 3px, transparent 3px,
+    transparent 5px, black 5px, black 8px, transparent 8px
+  );
+  -webkit-mask-size: 6px 10px;
+  -webkit-mask-repeat: repeat-y;
+}
+
+/* ===== Status: Progress ===== */
+.cinema-ticket-stub--tearable { cursor: grab; }
+.cinema-ticket-stub--tearable:active { cursor: grabbing; }
+
+/* Progress: zigzag 제거 (흔들림 중 삐져나옴 방지) */
+.cinema-ticket--progress .cinema-ticket-zigzag { display: none; }
+
+.cinema-ticket--progress .cinema-ticket-stub {
+  animation: stub-wobble 2.2s ease-in-out infinite;
+}
+@keyframes stub-wobble {
+  0%, 100% { transform: translateX(0px) rotate(0deg); }
+  20% { transform: translateX(3px) rotate(0.6deg); }
+  40% { transform: translateX(5px) rotate(-0.4deg); }
+  60% { transform: translateX(3px) rotate(0.5deg); }
+  80% { transform: translateX(1px) rotate(-0.2deg); }
+}
+.cinema-ticket--progress .cinema-ticket-perf-dots {
+  animation: perf-stress 2.2s ease-in-out infinite;
+}
+@keyframes perf-stress {
+  0%, 100% { border-left-color: #ccc5b5; }
+  40% { border-left-color: #a09880; }
+}
+
+/* 드래그 중 */
+.cinema-ticket--tearing { overflow: visible !important; }
+.cinema-ticket--tearing .cinema-ticket-zigzag { display: none; }
+.cinema-ticket--tearing .cinema-ticket-perf-notch { display: none; }
+
+/* 뜯기 완료 */
+.cinema-ticket--ripping { overflow: visible !important; }
+.cinema-ticket--ripping .cinema-ticket-zigzag { display: none; }
+.cinema-ticket--ripping .cinema-ticket-perf-notch { display: none; }
+.cinema-ticket--ripping .cinema-ticket-stub {
+  animation: stub-fly-right 0.7s cubic-bezier(0.2, 0, 0.6, 1) forwards !important;
+}
+@keyframes stub-fly-right {
+  0% { transform: translateX(50px) rotate(5deg); opacity: 1; }
+  40% { transform: translateX(100px) rotate(-6deg); opacity: 0.7; }
+  100% { transform: translateX(200px) rotate(12deg); opacity: 0; }
+}
+.cinema-ticket--ripping .cinema-ticket-perforation {
+  animation: perf-snap 0.3s ease-out forwards !important;
+}
+@keyframes perf-snap {
+  to { width: 0; opacity: 0; }
+}
+
+/* ===== Status: Done ===== */
+.cinema-ticket--done .cinema-ticket-perforation { display: none; }
+.cinema-ticket--done .cinema-ticket-stub { display: none; }
+/* 찢긴 오른쪽 가장자리 */
+.cinema-ticket--done::after {
+  content: '';
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: repeating-linear-gradient(
+    180deg,
+    #f5f0e6 0px, #f5f0e6 2px,
+    #e0d8c8 2px, #e0d8c8 3px,
+    #f5f0e6 3px, #f5f0e6 5px
+  );
+}
+.cinema-ticket--done {
+  opacity: 0.65;
+}
+
+/* Drop indicator */
+.kanban-drop-indicator {
+  height: 2px; background: var(--accent); border-radius: 1px;
+  margin: 2px 0;
+}
+
+/* TimeTable ticket drop highlight */
+.tt-block--ticket-drop {
+  box-shadow: inset 0 0 0 2px #1a73e8;
+}
+
+/* ===== Ticket Modal ===== */
+.ticket-modal { width: 90vw; max-width: 700px; }
+.ticket-form {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.ticket-row {
+  display: flex; gap: 10px;
+}
+.ticket-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ticket-field--grow { flex: 1; }
+.ticket-field-label {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+}
+.ticket-field-input {
+  font-size: 13px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  outline: none; font-family: var(--font);
+}
+.ticket-field-input:focus { border-color: var(--accent); }
+.ticket-field-select {
+  font-size: 13px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  outline: none; background: #fff; font-family: var(--font);
+}
+.ticket-field-select:focus { border-color: var(--accent); }
+.ticket-field-textarea {
+  font-size: 12px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  outline: none; resize: vertical; font-family: var(--font); line-height: 1.5;
+}
+.ticket-field-textarea:focus { border-color: var(--accent); }
+
+.ticket-section {
+  border-top: 1px solid var(--border); padding-top: 10px;
+}
+.ticket-section-title {
+  font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.ticket-activity-fields-row {
+  display: flex; gap: 10px;
+}
+.ticket-activity-fields-row .ticket-field { flex: 1; }
+.ticket-5w1h-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.ticket-actions {
+  display: flex; gap: 8px; align-items: center;
+  padding-top: 8px; border-top: 1px solid var(--border);
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }

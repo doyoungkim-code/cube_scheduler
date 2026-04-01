@@ -2,6 +2,7 @@ export interface TimeSlot {
   label: string
   color: string
   detail?: string
+  ticketId?: string
 }
 
 export interface Routine {

@@ -3,7 +3,9 @@ import ActivityPalette from './components/ActivityPalette'
 import TimeTable from './components/TimeTable'
 import Calendar from './components/Calendar'
 import RoutineEditor from './components/RoutineEditor'
+import KanbanBoard from './components/KanbanBoard'
 import { useDayData, todayKey } from './hooks/useDayData'
+import { useKanbanData } from './hooks/useKanbanData'
 import { SLEEP_ACTIVITY } from './types/schedule'
 import './styles/global.css'
 
@@ -26,8 +28,8 @@ function App() {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
-  // 다른 날짜를 볼 때만 오늘 데이터를 별도로 로드 (같은 키일 때 경합 방지)
   const todayDataAux = useDayData(selectedDate === today ? '__unused__' : today)
+  const kanban = useKanbanData()
   const [showRoutineEditor, setShowRoutineEditor] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
@@ -57,6 +59,27 @@ function App() {
     window.electronAPI?.toggleCollapse(next)
   }, [collapsed])
 
+  // 티켓을 타임테이블 슬롯에 드롭했을 때
+  const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {
+    const ticket = kanban.getTicket(ticketId)
+    if (!ticket || ticket.status !== 'progress') return
+    const activity = data.activities.find(a => a.id === ticket.activityId)
+    if (!activity) return
+    // 이미 같은 활동으로 칠해진 연속 슬롯들에 ticketId 연결
+    const existingSlot = data.day.slots[slotMin]
+    if (!existingSlot || existingSlot.label !== activity.name) return
+    // 같은 활동의 연속 구간 찾기
+    let start = slotMin
+    while (start > 0 && data.day.slots[start - 10]?.label === activity.name) start -= 10
+    let end = slotMin + 10
+    while (end < 1440 && data.day.slots[end]?.label === activity.name) end += 10
+    // 구간 전체에 ticketId 설정
+    for (let m = start; m < end; m += 10) {
+      const s = data.day.slots[m]
+      if (s) data.setSlot(m, { ...s, ticketId: ticket.id })
+    }
+  }, [kanban, data])
+
   const [y, m, d] = selectedDate.split('-').map(Number)
   const dateObj = new Date(y, m - 1, d)
   const dayName = DAY_NAMES[dateObj.getDay()]
@@ -65,7 +88,6 @@ function App() {
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
 
-  // 현재 시간 슬롯의 활동에 따라 방 이미지 결정
   const nowMin = now.getHours() * 60 + now.getMinutes()
   const nowSlotMin = Math.floor(nowMin / 10) * 10
   const todaySlots = isToday ? data.day.slots : todayDataAux.day.slots
@@ -91,35 +113,53 @@ function App() {
           </button>
         </div>
 
-        {/* 오른쪽: 타임테이블 영역 */}
+        {/* 오른쪽: 타임테이블 + 칸반보드 */}
         {!collapsed && (
           <div className="app-right">
-            <div className="app-right-dateline">
-              <span className="app-date-label">{m}월 {d}일 {dayName}요일</span>
-              {!isToday && (
-                <button className="btn-today" onClick={() => setSelectedDate(today)}>
-                  오늘로
-                </button>
-              )}
-              <span className="app-dateline-spacer" />
-              <button className="btn-action" onClick={() => setShowRoutineEditor(true)}>루틴 설정</button>
-              <button className="btn-action" onClick={() => setShowCalendar(!showCalendar)}>달력</button>
+            {/* 상단: 타임테이블 영역 */}
+            <div className="app-right-upper">
+              <div className="app-right-dateline">
+                <span className="app-date-label">{m}월 {d}일 {dayName}요일</span>
+                {!isToday && (
+                  <button className="btn-today" onClick={() => setSelectedDate(today)}>
+                    오늘로
+                  </button>
+                )}
+                <span className="app-dateline-spacer" />
+                <button className="btn-action" onClick={() => setShowRoutineEditor(true)}>루틴 설정</button>
+                <button className="btn-action" onClick={() => setShowCalendar(!showCalendar)}>달력</button>
+              </div>
+
+              <ActivityPalette
+                activities={data.activities}
+                selectedId={selectedActivityId}
+                onSelect={setSelectedActivityId}
+                onChange={data.setActivities}
+              />
+              <TimeTable
+                day={data.day}
+                rawSlots={data.rawDay.slots}
+                routines={data.routines}
+                selectedActivity={selectedActivity}
+                tickets={kanban.tickets}
+                onSlotChange={data.setSlot}
+                onSlotRangeChange={data.setSlotRange}
+                onTicketDrop={handleTicketDropOnSlot}
+              />
             </div>
 
-            <ActivityPalette
-              activities={data.activities}
-              selectedId={selectedActivityId}
-              onSelect={setSelectedActivityId}
-              onChange={data.setActivities}
-            />
-            <TimeTable
-              day={data.day}
-              rawSlots={data.rawDay.slots}
-              routines={data.routines}
-              selectedActivity={selectedActivity}
-              onSlotChange={data.setSlot}
-              onSlotRangeChange={data.setSlotRange}
-            />
+            {/* 하단: 칸반보드 영역 */}
+            <div className="app-right-lower">
+              <KanbanBoard
+                tickets={kanban.tickets}
+                activities={data.activities}
+                addTicket={kanban.addTicket}
+                updateTicket={kanban.updateTicket}
+                deleteTicket={kanban.deleteTicket}
+                moveTicket={kanban.moveTicket}
+                getTicketsByStatus={kanban.getTicketsByStatus}
+              />
+            </div>
           </div>
         )}
       </div>

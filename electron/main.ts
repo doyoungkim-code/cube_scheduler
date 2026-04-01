@@ -7,10 +7,10 @@ let store: Store
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1500,
-    height: 475,
+    width: 1400,
+    height: 900,
     minWidth: 800,
-    minHeight: 300,
+    minHeight: 600,
     frame: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
@@ -71,7 +71,7 @@ function setupIPC() {
       mainWindow.setMinimumSize(200, 300)
       mainWindow.setSize(380, h, true)
     } else {
-      mainWindow.setSize(1500, h, true)
+      mainWindow.setSize(1400, h, true)
       mainWindow.setMinimumSize(800, 300)
     }
   })
