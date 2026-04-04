@@ -3,8 +3,7 @@
 개인용 데스크톱 일정 관리 앱. 24시간 타임테이블(144개 10분 블록)에 활동을 드래그로 칠하여 하루 일과를 기록하고, Jira 스타일 칸반보드로 업무를 관리한다.
 
 ## UI 구조
-
-<img width="2613" height="815" alt="image" src="https://github.com/user-attachments/assets/c23b57a3-7c9a-4715-97ce-6f8e19f4145e" />
+<img width="2419" height="1561" alt="스크린샷 2026-04-04 225740" src="https://github.com/user-attachments/assets/111e0a02-d642-498f-818d-cebf9149f210" />
 
 ### 메인 화면 (스케줄러)
 - **왼쪽 패널**: 현재 활동에 따라 방 픽셀아트 이미지가 자동 전환 + 네비게이션 아이콘
