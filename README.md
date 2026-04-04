@@ -6,10 +6,18 @@
 
 <img width="2613" height="815" alt="image" src="https://github.com/user-attachments/assets/c23b57a3-7c9a-4715-97ce-6f8e19f4145e" />
 
-- 왼쪽 패널: 현재 활동에 따라 방 픽셀아트 이미지가 자동 전환
-- 오른쪽 상단: 팔레트, 타임테이블, 현재 태스크
-- 오른쪽 하단: 칸반보드 (Todo / Progress / Done)
+### 메인 화면 (스케줄러)
+- **왼쪽 패널**: 현재 활동에 따라 방 픽셀아트 이미지가 자동 전환 + 네비게이션 아이콘
+- **오른쪽 상단**: 팔레트, 타임테이블, 현재 시간대 기록
+- **오른쪽 하단**: 칸반보드 (Todo / Progress / Done)
 - 접기 버튼(◀)으로 왼쪽 패널만 표시 가능 (창 크기 연동)
+
+### 네비게이션 아이콘 (왼쪽 패널 하단)
+방 이미지 아래에 아이콘 버튼으로 다른 뷰에 접근:
+- 📊 **대시보드** — 하루/주간 활동 리포트, HTML 내보내기
+- ✅ **습관 트래커** — (예정)
+- 📝 **퀵 메모** — (예정)
+- ⚙️ **환경설정** — (예정)
 
 ## 기술 스택
 
@@ -26,45 +34,43 @@
 ```
 scheduler/
 ├── electron/
-│   ├── main.ts          # Electron 메인 프로세스 (BrowserWindow, IPC, 창 크기 토글)
+│   ├── main.ts          # Electron 메인 프로세스 (BrowserWindow, IPC, 클립보드)
 │   ├── preload.ts       # contextBridge로 렌더러에 API 노출
 │   └── store.ts         # JSON 파일 기반 로컬 스토리지
 ├── src/
-│   ├── App.tsx           # 루트 컴포넌트. 상하 분할 레이아웃 (타임테이블 + 칸반)
+│   ├── App.tsx           # 루트 컴포넌트. 뷰 스위처 + 스케줄러 메인 화면
 │   ├── main.tsx          # React 엔트리포인트
 │   ├── components/
-│   │   ├── TimeTable.tsx          # 144블록 메인 타임테이블. 드래그 페인트, 줌 뷰, 현재 태스크
-│   │   ├── ActivityPalette.tsx    # 활동 팔레트 칩. 클릭 선택, 우클릭 편집, 인라인 추가
+│   │   ├── TimeTable.tsx          # 144블록 메인 타임테이블. 드래그 페인트, 줌 뷰
+│   │   ├── ActivityPalette.tsx    # 활동 팔레트 칩. 클릭 선택, 우클릭 편집
 │   │   ├── RoutineEditor.tsx      # 루틴 편집 모달. 미니 타임테이블로 드래그 페인트
-│   │   ├── Calendar.tsx           # 월간 달력 모달. 데이터 있는 날짜에 점 표시
-│   │   ├── HourDetail.tsx         # 시간 블록 클릭 시 상세 패널 (티켓 스타일)
+│   │   ├── Calendar.tsx           # 월간 달력 모달
+│   │   ├── HourDetail.tsx         # 시간 블록 클릭 시 상세 패널 (모달 편집)
 │   │   ├── KanbanBoard.tsx        # 칸반보드 컨테이너. 3컬럼 + 티켓 CRUD
-│   │   ├── KanbanColumn.tsx       # 칸반 컬럼 (드롭 타겟, 드롭 인디케이터)
+│   │   ├── KanbanColumn.tsx       # 칸반 컬럼 (드롭 타겟)
 │   │   ├── KanbanCard.tsx         # 기차표 스타일 드래그 가능 티켓 카드
 │   │   ├── TicketModal.tsx        # 티켓 생성/편집 모달
 │   │   ├── TicketActivityFields.tsx # 활동별 조건부 세부 필드 (운동/알고리즘)
-│   │   ├── DayInfo.tsx            # 날짜 정보 컴포넌트 (예비)
-│   │   └── CurrentTime.tsx        # 실시간 시계 컴포넌트 (예비)
+│   │   ├── ViewShell.tsx          # 서브 뷰 공통 래퍼 (돌아가기 버튼 + 제목)
+│   │   └── MenuCard.tsx           # 홈 메뉴 카드 (미사용, 예비)
+│   ├── pages/
+│   │   ├── PatternAnalysisView.tsx # 대시보드: 일간/주간 리포트 + HTML 내보내기
+│   │   ├── HabitTrackerView.tsx    # 습관 트래커 (예정)
+│   │   ├── QuickMemoView.tsx       # 퀵 메모 / 일기 (예정)
+│   │   └── SettingsView.tsx        # 환경설정 (예정)
 │   ├── hooks/
 │   │   ├── useDayData.ts    # 날짜별 데이터 CRUD 훅. 루틴 자동 병합, 자동 저장
 │   │   └── useKanbanData.ts # 칸반 티켓 CRUD 훅. dirty flag 자동 저장
 │   ├── types/
-│   │   ├── schedule.ts    # 타임테이블 타입 (TimeSlot, DayData, Routine, Activity)
+│   │   ├── schedule.ts    # 타임테이블 타입 (TimeSlot, SlotRecord, DayData, Routine, Activity)
 │   │   ├── kanban.ts      # 칸반 타입 (Ticket, KanbanStatus, ActivitySpecificFields)
+│   │   ├── navigation.ts  # 뷰 네비게이션 타입 (ViewId)
 │   │   └── electron.d.ts  # window.electronAPI 타입 선언
 │   └── styles/
 │       └── global.css     # 전역 스타일 (다크 브라운 테마, 기차표 티켓 CSS)
 ├── public/
-│   ├── room.png           # 기본 방 이미지 (활동 없을 때)
-│   ├── room_algo.png      # 알고리즘
-│   ├── room_coding.png    # 프로젝트
-│   ├── room_coffee.png    # 커피, 음악, 독서
-│   ├── room_diary.png     # 기록
-│   ├── room_eat.png       # 식사
-│   ├── room_english.png   # 영어 공부
-│   ├── room_exercise.png  # 운동
-│   ├── room_outside.png   # 샤워
-│   └── room_sleep.png     # 수면
+│   ├── room.png ~ room_sleep.png  # 활동별 방 픽셀아트 이미지 (9종)
+│   └── icon.ico                   # 앱 아이콘
 ├── scripts/
 │   ├── build-electron.js  # esbuild로 electron/ → dist-electron/ 빌드
 │   └── apply-icon.js      # rcedit로 exe에 아이콘 적용
@@ -79,12 +85,20 @@ scheduler/
 ### 타임테이블
 
 ```typescript
+// 타임라인 기록 (슬롯에 저장되는 상세 정보)
+interface SlotRecord {
+  title: string
+  description: string
+  activityFields?: ActivitySpecificFields
+}
+
 // 10분 슬롯 하나
 interface TimeSlot {
   label: string        // 활동 이름 (예: "알고리즘")
   color: string        // 색상 코드 (예: "#e8a87c")
   detail?: string      // 세부 메모
-  ticketId?: string    // 연결된 칸반 티켓 ID
+  ticketId?: string    // 칸반 티켓 드래그 연결 시 참조용
+  record?: SlotRecord  // 타임라인 기록 (칸반과 별개)
 }
 
 // 하루 데이터
@@ -92,23 +106,6 @@ interface DayData {
   date: string                    // "2026-03-24"
   goal: string                    // 오늘의 목표
   slots: Record<number, TimeSlot> // key: 분(0~1430, 10 단위), 총 144칸
-}
-
-// 루틴 (빈 슬롯에 자동 채워짐)
-interface Routine {
-  id: string
-  name: string
-  color: string
-  startMin: number    // 시작 분 (예: 0)
-  endMin: number      // 종료 분 (예: 420)
-}
-
-// 활동 (팔레트에 표시)
-interface Activity {
-  id: string
-  name: string
-  color: string
-  order: number
 }
 ```
 
@@ -152,64 +149,66 @@ interface Ticket {
 ### 팔레트 선택 → 드래그 페인트
 1. 팔레트에서 활동 칩 클릭 (선택 상태)
 2. 타임테이블 위에서 마우스 드래그 → 선택된 활동으로 슬롯 채움
-3. 지우개 선택 후 드래그 → 슬롯 삭제
-4. 드래그 중 아래에 줌 뷰(3시간 확대)로 정밀 조작
+3. **드래그 완료 시 활동 선택 자동 해제** → 현재 시간대 패널로 전환
+4. 지우개 선택 후 드래그 → 슬롯 삭제
+5. 드래그 중 아래에 줌 뷰(3시간 확대)로 정밀 조작
 
-마우스 위치 → 분 변환: `blocksRef.getBoundingClientRect()` + `Math.floor()`
+### 타임라인 기록 (칸반과 독립)
+- 현재 시간대 / 시간 블록 클릭 시 기록 카드 표시
+- **카드 클릭 → TicketModal이 모달로 열림** (제목, 상세, 활동별 필드 편집)
+- 저장 시 슬롯의 `record` 필드에 저장 (칸반보드에는 추가되지 않음)
+- 활동 유형에 따라 자동으로 세부 필드 표시 (운동: 종류/km/분, 알고리즘: 문제번호/시간/링크)
+- 루틴은 현재 시간대/시간 상세 패널에서 표시되지 않음
 
 ### 칸반보드 (Jira 스타일)
 - **3컬럼**: Todo / Progress / Done
 - **티켓 생성**: `+ 티켓 추가` 버튼 → 모달에서 제목, 상세, 활동 유형, Why 입력
-- **활동별 필드**: 운동(종류/km/분), 알고리즘(문제번호/풀이시간/링크) 자동 표시
 - **드래그앤드롭**: HTML5 DnD API로 컬럼 간 이동, 순서 변경
-- **기차표 비주얼**: 왼쪽 본문 + 세로 절취선 + 오른쪽 컬러 스텁 + 톱니 가장자리
-
-### 티켓 → 타임테이블 연동
-- **Progress 티켓**을 타임테이블의 **이미 같은 활동으로 칠해진 슬롯** 위로 드래그앤드롭
-- 해당 연속 구간 전체에 `ticketId`가 연결됨
-- 현재 시간대 / 시간 상세 패널에서 연결된 티켓의 전체 내용(제목, 상세, 활동별 필드, WHY) 표시
+- **기차표 비주얼**: 왼쪽 본문(활동 컬러 헤더바) + 세로 절취선 + 오른쪽 컬러 스텁 + 톱니 가장자리
 
 ### 바코드 뜯기 (Progress → Done)
-- Progress 티켓의 오른쪽 스텁(바코드 영역)을 **오른쪽으로 드래그**
-- 절취선이 실시간으로 벌어지고, 50px 이상 당기면 스텁이 날아가며 뜯어짐
+- Progress 티켓의 오른쪽 스텁을 **오른쪽으로 드래그** → 50px 이상 당기면 뜯어짐
 - 자동으로 Done 컬럼으로 이동
 - **상태별 비주얼**:
   - Todo: 깔끔한 기차표
   - Progress: 스텁이 살짝 흔들림 (뜯을랑 말랑 애니메이션)
   - Done: 스텁 제거 + 찢긴 가장자리 표시 + 투명도 65%
 
-### 태스크 그룹핑 (티켓 스타일)
-- `groupAllSlots()`: 0~1440 전체 스캔하여 연속된 동일 활동을 하나의 그룹으로 묶음
-- 시간 경계를 무시 (예: 04:00~08:30 수면 → 하나의 270분 그룹)
-- 현재 시간대 패널: 루틴 제외, 수동 입력만 티켓 카드 형태로 표시
-- 연결된 칸반 티켓이 있으면 티켓의 전체 내용을 표시
+### 칸반 → 타임테이블 연동
+- **Progress 티켓**을 타임테이블의 **이미 같은 활동으로 칠해진 슬롯** 위로 드래그앤드롭
+- 해당 연속 구간 전체에 `ticketId`가 연결됨
+- 타임라인에서 삭제해도 칸반에는 영향 없음 (독립적)
+
+### 대시보드 (일간/주간 리포트)
+- 왼쪽 패널 📊 아이콘으로 진입
+- **하루 일과**: 타임라인 바 + 활동별 시간 요약 + 기록 제목별 상세 (루틴 제외)
+- **주간 현황**: 월~일 7일 타임라인 + 주간 합산 활동별 시간 (제목 기반 그룹핑)
+- **날짜 선택**: date input으로 원하는 날짜/주 선택 가능
+- **타임라인 hover**: 마우스 올리면 `00:30 ~ 03:20 알고리즘 스터디` 형태로 연속 구간 범위 표시
+- **HTML 클립보드 복사**: 인라인 스타일이 포함된 HTML 소스코드를 텍스트로 복사 → 블로그 HTML 편집기에 붙여넣기
+  - tooltip CSS(`<style>` 블록)도 포함하여 블로그에서도 hover 동작
+  - 첫 복사 시 Tistory/블로그 붙여넣기 튜토리얼 모달 표시
+  - 하단에 Cube Scheduler GitHub 링크 포함
 
 ### 루틴 시스템
 - 루틴은 사용자가 직접 칠하지 않은 빈 슬롯에만 자동 적용 (수동 입력 우선)
 - 타임테이블에서 반투명 + 사선 패턴으로 구분 표시
-- `useDayData` 훅의 `applyRoutines()`에서 병합
-- 루틴 편집: 모달 내 미니 타임테이블에서 동일한 드래그 페인트 방식
-- 현재 시간대 패널에서는 루틴 미표시
+- 현재 시간대 패널, 대시보드에서는 루틴 미표시
 
-### 방 이미지 연동 (App.tsx의 ROOM_MAP)
+### 방 이미지 연동
 - 현재 시간의 활동명으로 `ROOM_MAP` 조회 → 매칭되는 이미지로 왼쪽 패널 변경
-- 오늘 날짜를 보고 있으면 `data.day.slots` 사용 (실시간 반영)
-- 다른 날짜를 보고 있으면 별도의 `todayDataAux` 훅으로 오늘 데이터 참조
-
-### 접기/펼치기
-- 왼쪽 패널의 ◀ 버튼 → 오른쪽 타임테이블 영역 숨김
-- IPC `window:toggle-collapse`로 Electron 창 크기도 연동 축소/복원
+- 다른 날짜를 보고 있어도 오늘 데이터 기준으로 이미지 결정
 
 ## IPC 통신
 
 ```
 렌더러 (React)
-  ↓ window.electronAPI.loadData / saveData / listDayKeys / toggleCollapse
+  ↓ window.electronAPI
 Preload (contextBridge)
   ↓ ipcRenderer.invoke
 메인 프로세스 (ipcMain.handle)
   ↓
-Store (JSON 파일 읽기/쓰기)
+Store / clipboard
 ```
 
 | 채널 | 용도 |
@@ -219,15 +218,17 @@ Store (JSON 파일 읽기/쓰기)
 | `store:listKeys` | 접두사로 키 목록 조회 (달력 점 표시용) |
 | `window:toggle-collapse` | 창 크기 토글 |
 | `notification:show` | 시스템 알림 표시 |
+| `clipboard:writeHtml` | HTML + 텍스트를 클립보드에 복사 |
 
 ## UI 테마
 
 - 전체 배경: `#56423f` (다크 브라운)
 - 타임테이블/칸반 영역: 흰색 배경 (CSS 변수 로컬 오버라이드)
 - 칸반 티켓: `#f5f0e6` (크림) + 활동 컬러 헤더/스텁
-- 모달 (루틴 편집, 달력, 티켓): 흰색 배경
-- 프레임리스 윈도우 + `titleBarOverlay` (최소화/최대화/닫기만 표시)
-- 창 크기: 1400×900 (기존 1500×475에서 칸반보드 추가로 확대)
+- 대시보드 리포트 카드: `#f5f0e6` 배경 + `#56423f` 헤더
+- 모달: 흰색 배경
+- 프레임리스 윈도우 + `titleBarOverlay`
+- 창 크기: 1400×900
 
 ## 빌드 및 실행
 
@@ -254,5 +255,5 @@ npm run electron:build         # exe 패키징 + 아이콘 적용
 ### 알려진 빌드 이슈 (Windows)
 - **winCodeSign symlink 에러**: `package.json`의 `"signAndEditExecutable": false`로 우회
 - **Vite exit code 127**: bash 환경 아티팩트, 빌드 결과는 정상. `rm -rf dist` 후 재빌드 필요
-- **`npx electron .` 실행 불가**: `require("electron")`이 경로 문자열을 반환하는 환경 문제. 패키지된 exe로 실행해야 함
+- **`npx electron .` 실행 불가**: `require("electron")`이 경로 문자열을 반환하는 환경 문제. 패키지된 exe로 실행
 - **exe 잠금**: Scheduler.exe 실행 중 재빌드 시 `taskkill //IM "Scheduler.exe" //F` 후 재시도

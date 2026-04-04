@@ -13,4 +13,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 알림
   showNotification: (title: string, body: string) =>
     ipcRenderer.invoke('notification:show', title, body),
+
+  // 클립보드에 HTML 복사
+  copyHtmlToClipboard: (html: string, plainText: string) =>
+    ipcRenderer.invoke('clipboard:writeHtml', html, plainText),
 })

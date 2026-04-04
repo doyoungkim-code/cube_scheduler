@@ -4,6 +4,7 @@ export interface ElectronAPI {
   listDayKeys: () => Promise<string[]>
   toggleCollapse: (collapsed: boolean) => Promise<void>
   showNotification: (title: string, body: string) => Promise<void>
+  copyHtmlToClipboard: (html: string, plainText: string) => Promise<boolean>
 }
 
 declare global {

@@ -12,9 +12,11 @@ interface Props {
   onSave: (ticket: Ticket) => void
   onDelete?: (id: string) => void
   onClose: () => void
+  hideStatus?: boolean
+  hideWhy?: boolean
 }
 
-export default function TicketModal({ ticket, defaultStatus, activities, onSave, onDelete, onClose }: Props) {
+export default function TicketModal({ ticket, defaultStatus, activities, onSave, onDelete, onClose, hideStatus, hideWhy }: Props) {
   const isEdit = !!ticket
 
   const [title, setTitle] = useState(ticket?.title ?? '')
@@ -85,18 +87,20 @@ export default function TicketModal({ ticket, defaultStatus, activities, onSave,
           </div>
 
           <div className="ticket-row">
-            <div className="ticket-field">
-              <label className="ticket-field-label">상태</label>
-              <select
-                className="ticket-field-select"
-                value={status}
-                onChange={e => setStatus(e.target.value as KanbanStatus)}
-              >
-                <option value="todo">To Do</option>
-                <option value="progress">Progress</option>
-                <option value="done">Done</option>
-              </select>
-            </div>
+            {!hideStatus && (
+              <div className="ticket-field">
+                <label className="ticket-field-label">상태</label>
+                <select
+                  className="ticket-field-select"
+                  value={status}
+                  onChange={e => setStatus(e.target.value as KanbanStatus)}
+                >
+                  <option value="todo">To Do</option>
+                  <option value="progress">Progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+            )}
             <div className="ticket-field ticket-field--grow">
               <label className="ticket-field-label">활동 유형</label>
               <select
@@ -114,16 +118,18 @@ export default function TicketModal({ ticket, defaultStatus, activities, onSave,
 
           <TicketActivityFields value={activityFields} onChange={setActivityFields} />
 
-          <div className="ticket-field">
-            <label className="ticket-field-label">Why - 왜 하는가?</label>
-            <textarea
-              className="ticket-field-textarea"
-              value={why}
-              onChange={e => setWhy(e.target.value)}
-              placeholder="이 일을 하는 이유..."
-              rows={2}
-            />
-          </div>
+          {!hideWhy && (
+            <div className="ticket-field">
+              <label className="ticket-field-label">Why - 왜 하는가?</label>
+              <textarea
+                className="ticket-field-textarea"
+                value={why}
+                onChange={e => setWhy(e.target.value)}
+                placeholder="이 일을 하는 이유..."
+                rows={2}
+              />
+            </div>
+          )}
 
           <div className="ticket-actions">
             {isEdit && onDelete && (

@@ -1,8 +1,15 @@
+export interface SlotRecord {
+  title: string
+  description: string
+  activityFields?: import('../types/kanban').ActivitySpecificFields
+}
+
 export interface TimeSlot {
   label: string
   color: string
   detail?: string
   ticketId?: string
+  record?: SlotRecord
 }
 
 export interface Routine {

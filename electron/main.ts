@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, Notification } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, Notification, clipboard } from 'electron'
 import path from 'path'
 import { Store } from './store'
 
@@ -81,6 +81,15 @@ function setupIPC() {
     if (Notification.isSupported()) {
       new Notification({ title, body }).show()
     }
+  })
+
+  // HTML 클립보드 복사
+  ipcMain.handle('clipboard:writeHtml', async (_event, html: string, plainText: string) => {
+    clipboard.write({
+      html: html,
+      text: plainText,
+    })
+    return true
   })
 }
 
