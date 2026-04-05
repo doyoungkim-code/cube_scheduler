@@ -289,7 +289,6 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
           day={day}
           rawSlots={rawSlots}
           selectedActivity={selectedActivity}
-          tickets={tickets}
           activities={activities}
           onSlotChange={onSlotChange}
           onSlotRangeChange={onSlotRangeChange}

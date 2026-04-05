@@ -28,7 +28,6 @@ const ROOM_MAP: Record<string, string> = {
   '수면': './room_sleep.png',
 }
 
-export { ROOM_MAP }
 
 const NAV_ICONS: { id: ViewId; icon: string; label: string }[] = [
   { id: 'pattern-analysis', icon: '📊', label: '대시보드' },
@@ -114,7 +113,7 @@ function App() {
       case 'habit-tracker': return <HabitTrackerView onGoHome={goBack} />
       case 'quick-memo': return <QuickMemoView onGoHome={goBack} />
       case 'settings': return <SettingsView onGoHome={goBack} />
-      default: return <TodayDashboardView onGoHome={goBack} />
+      default: return <PatternAnalysisView onGoHome={goBack} />
     }
   }
 

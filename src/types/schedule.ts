@@ -1,7 +1,9 @@
+import type { ActivitySpecificFields } from './kanban'
+
 export interface SlotRecord {
   title: string
   description: string
-  activityFields?: import('../types/kanban').ActivitySpecificFields
+  activityFields?: ActivitySpecificFields
 }
 
 export interface TimeSlot {

@@ -23,15 +23,11 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    show: false,
+    show: true,
     backgroundColor: '#56423f',
   })
 
   Menu.setApplicationMenu(null)
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show()
-  })
 
   // 개발 모드: Vite 서버 / 프로덕션: 빌드된 파일
   if (process.env['ELECTRON_RENDERER_URL']) {

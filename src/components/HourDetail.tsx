@@ -9,7 +9,6 @@ interface HourDetailProps {
   day: DayData
   rawSlots: Record<number, TimeSlot>
   selectedActivity: Activity | null
-  tickets: Ticket[]
   activities: Activity[]
   onSlotChange: (min: number, slot: TimeSlot | null) => void
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
@@ -59,7 +58,7 @@ function groupAllDaySlots(day: DayData, rawSlots: Record<number, TimeSlot>): Slo
   return groups
 }
 
-function HourDetail({ hour, day, rawSlots, selectedActivity, tickets, activities, onSlotChange, onSlotRangeChange, onClose }: HourDetailProps) {
+function HourDetail({ hour, day, rawSlots, selectedActivity, activities, onSlotChange, onSlotRangeChange, onClose }: HourDetailProps) {
   const baseMin = hour * 60
   const allGroups = groupAllDaySlots(day, rawSlots)
   const groups = allGroups.filter(g => !g.isRoutine && g.startMin < baseMin + 60 && g.endMin > baseMin)
