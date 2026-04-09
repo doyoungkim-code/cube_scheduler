@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Activity, DayData, Routine, TimeSlot } from '../types/schedule'
+import type { Activity, DayData, Routine, TimeSlot, WeeklyRoutines } from '../types/schedule'
+import { emptyWeekly, dayKeyFromDate } from '../types/schedule'
 
 export function todayKey(): string {
   const d = new Date()
@@ -22,13 +23,22 @@ function applyRoutines(day: DayData, routines: Routine[]): DayData {
   return { ...day, slots }
 }
 
+// dateKey string → Date → DayOfWeek
+function getDayRoutines(weekly: WeeklyRoutines, dateKey: string): Routine[] {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  if (!y || !m || !d) return []
+  const date = new Date(y, m - 1, d)
+  const dk = dayKeyFromDate(date)
+  return weekly[dk]
+}
+
 export function useDayData(dateKey: string) {
   const [day, setDay] = useState<DayData>(() => makeEmptyDay(dateKey))
-  const [routines, setRoutines] = useState<Routine[]>([])
+  const [weekly, setWeekly] = useState<WeeklyRoutines>(() => emptyWeekly())
   const [activities, setActivities] = useState<Activity[]>([])
   const [loaded, setLoaded] = useState(false)
   const dirtyDay = useRef(false)
-  const dirtyRoutines = useRef(false)
+  const dirtyWeekly = useRef(false)
   const dirtyActivities = useRef(false)
 
   useEffect(() => {
@@ -39,10 +49,29 @@ export function useDayData(dateKey: string) {
       if (window.electronAPI) {
         try {
           const saved = await window.electronAPI.loadData(`day-${dateKey}`) as DayData | null
-          const savedRoutines = await window.electronAPI.loadData('routines') as Routine[] | null
+          const savedWeekly = await window.electronAPI.loadData('routines-weekly') as WeeklyRoutines | null
           const savedActivities = await window.electronAPI.loadData('activities') as Activity[] | null
           if (cancelled) return
-          if (savedRoutines) setRoutines(savedRoutines)
+
+          if (savedWeekly) {
+            setWeekly(savedWeekly)
+          } else {
+            // 마이그레이션: 기존 routines.json → 모든 요일에 복사
+            const legacy = await window.electronAPI.loadData('routines') as Routine[] | null
+            if (cancelled) return
+            if (legacy && legacy.length > 0) {
+              const migrated: WeeklyRoutines = {
+                weekday: legacy, weekend: legacy,
+                mon: legacy, tue: legacy, wed: legacy, thu: legacy, fri: legacy, sat: legacy, sun: legacy,
+              }
+              setWeekly(migrated)
+              // 마이그레이션 즉시 저장
+              window.electronAPI.saveData('routines-weekly', migrated)
+            } else {
+              setWeekly(emptyWeekly())
+            }
+          }
+
           if (savedActivities) setActivities(savedActivities)
           setDay(saved ?? makeEmptyDay(dateKey))
         } catch {
@@ -55,25 +84,24 @@ export function useDayData(dateKey: string) {
     return () => { cancelled = true }
   }, [dateKey])
 
-  // day 저장 — dirty일 때만
   useEffect(() => {
     if (!loaded || !dirtyDay.current) return
     if (window.electronAPI) window.electronAPI.saveData(`day-${dateKey}`, day)
   }, [day, dateKey, loaded])
 
-  // routines 저장 — dirty일 때만
   useEffect(() => {
-    if (!loaded || !dirtyRoutines.current) return
-    if (window.electronAPI) window.electronAPI.saveData('routines', routines)
-  }, [routines, loaded])
+    if (!loaded || !dirtyWeekly.current) return
+    if (window.electronAPI) window.electronAPI.saveData('routines-weekly', weekly)
+  }, [weekly, loaded])
 
-  // activities 저장 — dirty일 때만
   useEffect(() => {
     if (!loaded || !dirtyActivities.current) return
     if (window.electronAPI) window.electronAPI.saveData('activities', activities)
   }, [activities, loaded])
 
-  const dayWithRoutines = applyRoutines(day, routines)
+  // 해당 날짜 요일의 루틴 적용
+  const dayRoutines = getDayRoutines(weekly, dateKey)
+  const dayWithRoutines = applyRoutines(day, dayRoutines)
 
   const setGoal = useCallback((g: string) => {
     dirtyDay.current = true
@@ -100,9 +128,9 @@ export function useDayData(dateKey: string) {
     })
   }, [])
 
-  const wrappedSetRoutines = useCallback((r: Routine[]) => {
-    dirtyRoutines.current = true
-    setRoutines(r)
+  const wrappedSetWeekly = useCallback((w: WeeklyRoutines) => {
+    dirtyWeekly.current = true
+    setWeekly(w)
   }, [])
 
   const wrappedSetActivities = useCallback((a: Activity[]) => {
@@ -113,12 +141,13 @@ export function useDayData(dateKey: string) {
   return {
     day: dayWithRoutines,
     rawDay: day,
-    routines,
+    routines: dayRoutines,  // 호환성: 오늘 요일 루틴
+    weekly,
     activities,
     setGoal,
     setSlot,
     setSlotRange,
-    setRoutines: wrappedSetRoutines,
+    setWeekly: wrappedSetWeekly,
     setActivities: wrappedSetActivities,
   }
 }

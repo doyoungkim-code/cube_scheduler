@@ -22,6 +22,32 @@ export interface Routine {
   endMin: number
 }
 
+export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+export interface WeeklyRoutines {
+  weekday: Routine[]   // 템플릿
+  weekend: Routine[]   // 템플릿
+  mon: Routine[]
+  tue: Routine[]
+  wed: Routine[]
+  thu: Routine[]
+  fri: Routine[]
+  sat: Routine[]
+  sun: Routine[]
+}
+
+export const DAY_KEYS: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
+export function emptyWeekly(): WeeklyRoutines {
+  return { weekday: [], weekend: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] }
+}
+
+// JS Date.getDay(): 0=일, 1=월, ..., 6=토
+export function dayKeyFromDate(date: Date): DayOfWeek {
+  const dow = date.getDay()
+  return dow === 0 ? 'sun' : DAY_KEYS[dow - 1]
+}
+
 export interface Activity {
   id: string
   name: string

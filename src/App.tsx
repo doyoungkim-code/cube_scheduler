@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import ActivityPalette from './components/ActivityPalette'
 import TimeTable from './components/TimeTable'
 import Calendar from './components/Calendar'
-import RoutineEditor from './components/RoutineEditor'
 import KanbanBoard from './components/KanbanBoard'
 import { useDayData } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
@@ -44,7 +43,6 @@ function App() {
   const data = useDayData(selectedDate)
   const todayDataAux = useDayData(selectedDate === today ? '__unused__' : today)
   const kanban = useKanbanData()
-  const [showRoutineEditor, setShowRoutineEditor] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(false)
@@ -75,18 +73,26 @@ function App() {
 
   const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {
     const ticket = kanban.getTicket(ticketId)
-    if (!ticket || ticket.status !== 'progress') return
+    if (!ticket) return
     const activity = data.activities.find(a => a.id === ticket.activityId)
     if (!activity) return
+    // 같은 활동유형의 슬롯 위에 드롭한 경우에만 연결
     const existingSlot = data.day.slots[slotMin]
     if (!existingSlot || existingSlot.label !== activity.name) return
+    // 같은 활동의 연속 구간 찾기
     let start = slotMin
     while (start > 0 && data.day.slots[start - 10]?.label === activity.name) start -= 10
     let end = slotMin + 10
     while (end < 1440 && data.day.slots[end]?.label === activity.name) end += 10
+    // 티켓 내용을 슬롯 record에 복사 (칸반에는 영향 없음)
+    const record = {
+      title: ticket.title,
+      description: ticket.description,
+      activityFields: ticket.activityFields,
+    }
     for (let m = start; m < end; m += 10) {
       const s = data.day.slots[m]
-      if (s) data.setSlot(m, { ...s, ticketId: ticket.id })
+      if (s) data.setSlot(m, { ...s, detail: ticket.description, record })
     }
   }, [kanban, data])
 
@@ -158,7 +164,6 @@ function App() {
                   </button>
                 )}
                 <span className="app-dateline-spacer" />
-                <button className="btn-action" onClick={() => setShowRoutineEditor(true)}>루틴 설정</button>
                 <button className="btn-action" onClick={() => setShowCalendar(!showCalendar)}>달력</button>
               </div>
 
@@ -209,14 +214,6 @@ function App() {
         </div>
       )}
 
-      {showRoutineEditor && (
-        <RoutineEditor
-          routines={data.routines}
-          activities={data.activities}
-          onChange={data.setRoutines}
-          onClose={() => setShowRoutineEditor(false)}
-        />
-      )}
     </div>
   )
 }
