@@ -52,6 +52,19 @@ function App() {
     return () => clearInterval(t)
   }, [])
 
+  // 글로벌 키보드: Escape(달력닫기), Ctrl+Z(실행취소)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowCalendar(false)
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault()
+        data.undo()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [data.undo])
+
   const isToday = selectedDate === today
 
   const selectedActivity = selectedActivityId === '__sleep__'

@@ -42,32 +42,40 @@ export default function HabitChecklist() {
     load()
   }, [today])
 
-  // 스트릭 계산
+  // 스트릭 계산 (최적화: 날짜별로 한 번만 로드, 최대 60일)
   useEffect(() => {
-    if (!loaded || !window.electronAPI) return
+    if (!loaded || !window.electronAPI || habits.length === 0) return
+    let cancelled = false
     async function compute() {
+      // 날짜별 체크 데이터를 한번에 로드 (최대 60일)
+      const checkMap = new Map<string, string[]>()
+      for (let i = 0; i < 60; i++) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dk = dateKey(d)
+        const check = await window.electronAPI!.loadData(`habit-checks-${dk}`) as HabitCheck | null
+        if (cancelled) return
+        checkMap.set(dk, check?.habitIds ?? [])
+      }
+
       const result: Record<string, number> = {}
       for (const h of habits) {
         let count = 0
-        for (let i = 0; i < 365; i++) {
+        for (let i = 0; i < 60; i++) {
           const d = new Date()
           d.setDate(d.getDate() - i)
           const dk = dateKey(d)
-          const check = await window.electronAPI!.loadData(`habit-checks-${dk}`) as HabitCheck | null
-          if (check?.habitIds?.includes(h.id)) {
-            count++
-          } else if (i === 0) {
-            // 오늘은 체크 안 했어도 스트릭 0이 아니라 어제까지 계산
-            continue
-          } else {
-            break
-          }
+          const ids = checkMap.get(dk) ?? []
+          if (ids.includes(h.id)) { count++ }
+          else if (i === 0) { continue }
+          else { break }
         }
         result[h.id] = count
       }
-      setStreaks(result)
+      if (!cancelled) setStreaks(result)
     }
     compute()
+    return () => { cancelled = true }
   }, [habits, loaded, todayChecks])
 
   const saveHabits = useCallback((next: Habit[]) => {

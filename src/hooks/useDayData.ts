@@ -103,10 +103,25 @@ export function useDayData(dateKey: string) {
   const dayRoutines = getDayRoutines(weekly, dateKey)
   const dayWithRoutines = applyRoutines(day, dayRoutines)
 
+  // Undo 스택 (최대 20)
+  const undoStack = useRef<DayData[]>([])
+  const pushUndo = useCallback(() => {
+    undoStack.current = [...undoStack.current.slice(-19), day]
+  }, [day])
+
+  const undo = useCallback(() => {
+    const prev = undoStack.current.pop()
+    if (prev) {
+      dirtyDay.current = true
+      setDay(prev)
+    }
+  }, [])
+
   const setGoal = useCallback((g: string) => {
+    pushUndo()
     dirtyDay.current = true
     setDay(d => ({ ...d, goal: g }))
-  }, [])
+  }, [pushUndo])
 
   const setSlot = useCallback((min: number, slot: TimeSlot | null) => {
     dirtyDay.current = true
@@ -118,6 +133,7 @@ export function useDayData(dateKey: string) {
   }, [])
 
   const setSlotRange = useCallback((startMin: number, endMin: number, slot: TimeSlot | null) => {
+    pushUndo()
     dirtyDay.current = true
     setDay(d => {
       const slots = { ...d.slots }
@@ -126,7 +142,7 @@ export function useDayData(dateKey: string) {
       }
       return { ...d, slots }
     })
-  }, [])
+  }, [pushUndo])
 
   const wrappedSetWeekly = useCallback((w: WeeklyRoutines) => {
     dirtyWeekly.current = true
@@ -147,6 +163,7 @@ export function useDayData(dateKey: string) {
     setGoal,
     setSlot,
     setSlotRange,
+    undo,
     setWeekly: wrappedSetWeekly,
     setActivities: wrappedSetActivities,
   }

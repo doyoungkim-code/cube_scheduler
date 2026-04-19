@@ -40,7 +40,7 @@ function clampMin(m: number): number {
 function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activities, onSlotChange, onSlotRangeChange, onTicketDrop, onDeselectActivity }: TimeTableProps) {
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const blocksRef = useRef<HTMLDivElement>(null)
-  const [ticketDragOver, setTicketDragOver] = useState<number | null>(null)
+  const [ticketDragOver, setTicketDragOver] = useState<{ min: number; label: string } | null>(null)
 
   // 페인트 드래그 상태
   const [paintDrag, setPaintDrag] = useState<{ startMin: number; currentMin: number } | null>(null)
@@ -67,12 +67,28 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
   }, [])
 
   // 타임테이블 위 mouseDown → 페인트 시작
+  // Shift+드래그: 기존 슬롯의 활동으로 연장
+  const [shiftExtend, setShiftExtend] = useState<{ label: string; color: string } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; min: number } | null>(null)
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!selectedActivity) return
     e.preventDefault()
     const m = minFromMouse(e.clientX)
+
+    if (e.shiftKey) {
+      // Shift: 인접 슬롯의 활동 복사하여 연장
+      const slot = day.slots[m] || day.slots[m - 10] || day.slots[m + 10]
+      if (slot) {
+        setShiftExtend({ label: slot.label, color: slot.color })
+        setPaintDrag({ startMin: m, currentMin: m })
+        return
+      }
+    }
+
+    if (!selectedActivity) return
+    setShiftExtend(null)
     setPaintDrag({ startMin: m, currentMin: m })
-  }, [selectedActivity, minFromMouse])
+  }, [selectedActivity, minFromMouse, day.slots])
 
   // mousemove / mouseup 글로벌 이벤트
   useEffect(() => {
@@ -83,19 +99,22 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
     }
 
     const onUp = () => {
-      if (paintDrag && selectedActivity) {
+      if (paintDrag) {
         const start = Math.min(paintDrag.startMin, paintDrag.currentMin)
         const end = Math.max(paintDrag.startMin, paintDrag.currentMin) + 10
-        if (selectedActivity.id === 'eraser') {
-          onSlotRangeChange(start, end, null)
-        } else {
-          onSlotRangeChange(start, end, {
-            label: selectedActivity.name,
-            color: selectedActivity.color,
-          })
+
+        if (shiftExtend) {
+          // Shift+드래그: 해당 활동으로 구간 채움
+          onSlotRangeChange(start, end, { label: shiftExtend.label, color: shiftExtend.color })
+          setShiftExtend(null)
+        } else if (selectedActivity) {
+          if (selectedActivity.id === 'eraser') {
+            onSlotRangeChange(start, end, null)
+          } else {
+            onSlotRangeChange(start, end, { label: selectedActivity.name, color: selectedActivity.color })
+          }
+          onDeselectActivity?.()
         }
-        // 드래그 완료 후 활동 선택 해제
-        onDeselectActivity?.()
       }
       setPaintDrag(null)
     }
@@ -106,7 +125,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
     }
-  }, [paintDrag, selectedActivity, minFromMouse, onSlotRangeChange])
+  }, [paintDrag, selectedActivity, shiftExtend, minFromMouse, onSlotRangeChange])
 
   // 비드래그 상태 블록 클릭
   const handleBlockClick = (slotMin: number) => {
@@ -128,7 +147,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
   }
 
   const nowPct = (nowMin / TOTAL_MIN) * 100
-  const isPaintMode = !!selectedActivity
+  const isPaintMode = !!selectedActivity || !!shiftExtend
 
   // 줌 뷰 중심
   const zoomCenter = paintDrag ? paintDrag.currentMin : null
@@ -171,21 +190,17 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
         className={`tt-track ${isPaintMode ? 'tt-track--paint' : ''} ${ticketDragOver !== null ? 'tt-track--ticket-drop' : ''}`}
         onMouseDown={handleMouseDown}
         onDragOver={e => {
-          const ticketId = e.dataTransfer.types.includes('ticket-id')
-          if (!ticketId) return
+          if (!e.dataTransfer.types.includes('ticket-id')) return
           e.preventDefault()
           e.dataTransfer.dropEffect = 'move'
           const m = minFromMouse(e.clientX)
-          setTicketDragOver(m)
+          const label = e.dataTransfer.getData('ticket-activity') || ''
+          setTicketDragOver({ min: m, label })
         }}
         onDragLeave={() => setTicketDragOver(null)}
         onDrop={e => {
           const ticketId = e.dataTransfer.getData('ticket-id')
-          const ticketStatus = e.dataTransfer.getData('ticket-status')
-          if (!ticketId || ticketStatus !== 'progress') {
-            setTicketDragOver(null)
-            return
-          }
+          if (!ticketId) { setTicketDragOver(null); return }
           e.preventDefault()
           const m = minFromMouse(e.clientX)
           onTicketDrop?.(ticketId, m)
@@ -207,11 +222,21 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
             const hour = Math.floor(m / 60)
             const isSelectedHour = selectedHour === hour
             const inDragRange = paintDrag && m >= dragStart && m < dragEnd
-            const isTicketDropTarget = ticketDragOver !== null && m === ticketDragOver
+            // 티켓 드롭: 같은 활동 슬롯만 하이라이트
+            const isDraggingTicket = ticketDragOver !== null
+            const slotMatchesTicket = isDraggingTicket && slot && ticketDragOver.label && slot.label === ticketDragOver.label
+            const isTicketDropTarget = isDraggingTicket && m === ticketDragOver.min
 
             let blockStyle: React.CSSProperties | undefined
-            if (isTicketDropTarget) {
+            if (isTicketDropTarget && slotMatchesTicket) {
               blockStyle = { backgroundColor: '#1a73e8', opacity: 0.6 }
+            } else if (isTicketDropTarget && !slotMatchesTicket) {
+              blockStyle = rawSlot ? { ...blockStyle, backgroundColor: rawSlot.color, opacity: 0.3 } : { backgroundColor: '#ff3b30', opacity: 0.2 }
+            } else if (isDraggingTicket && slotMatchesTicket) {
+              // 같은 활동 슬롯 전체를 살짝 강조
+              blockStyle = { backgroundColor: slot!.color, boxShadow: 'inset 0 0 0 1px rgba(26,115,232,0.4)' }
+            } else if (inDragRange && shiftExtend) {
+              blockStyle = { backgroundColor: shiftExtend.color, opacity: 0.75 }
             } else if (inDragRange && selectedActivity) {
               if (selectedActivity.id === 'eraser') {
                 blockStyle = { backgroundColor: '#ff3b30', opacity: 0.4 }
@@ -230,6 +255,11 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
                 className={`tt-block ${slot ? 'tt-block--filled' : ''} ${isRoutineOnly ? 'tt-block--routine' : ''} ${isHourStart ? 'tt-block--hour-start' : ''} ${isSelectedHour ? 'tt-block--selected-hour' : ''} ${inDragRange ? 'tt-block--drag-range' : ''} ${isTicketDropTarget ? 'tt-block--ticket-drop' : ''}`}
                 style={blockStyle}
                 onClick={() => handleBlockClick(m)}
+                onContextMenu={e => {
+                  if (!rawSlot) return
+                  e.preventDefault()
+                  setContextMenu({ x: e.clientX, y: e.clientY, min: m })
+                }}
                 title={isRoutineOnly ? `루틴: ${routine.name}` : undefined}
               />
             )
@@ -306,6 +336,35 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activit
           onSlotChange={onSlotChange}
         />
       )}
+
+      {/* 우클릭 컨텍스트 메뉴 */}
+      {contextMenu && (() => {
+        const slot = rawSlots[contextMenu.min]
+        if (!slot) return null
+        // 연속 구간 찾기
+        let gStart = contextMenu.min
+        while (gStart > 0 && day.slots[gStart - 10]?.label === slot.label) gStart -= 10
+        let gEnd = contextMenu.min + 10
+        while (gEnd < 1440 && day.slots[gEnd]?.label === slot.label) gEnd += 10
+
+        return (
+          <>
+            <div className="ctx-backdrop" onClick={() => setContextMenu(null)} />
+            <div className="ctx-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
+              <div className="ctx-header">{slot.label} ({fmtMin(gStart)}~{fmtMin(gEnd)})</div>
+              <button className="ctx-item" onClick={() => {
+                onSlotRangeChange(gStart, gEnd, null)
+                setContextMenu(null)
+              }}>이 구간 삭제</button>
+              <button className="ctx-item" onClick={() => {
+                // 이 시간 블록 상세 열기
+                setSelectedHour(Math.floor(contextMenu.min / 60))
+                setContextMenu(null)
+              }}>시간 상세 보기</button>
+            </div>
+          </>
+        )
+      })()}
     </section>
   )
 }

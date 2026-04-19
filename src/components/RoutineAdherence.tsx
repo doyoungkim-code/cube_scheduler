@@ -25,6 +25,7 @@ function dateKey(d: Date): string {
 export default function RoutineAdherence({ weekly }: Props) {
   const [stats, setStats] = useState<DayStat[]>([])
   const [overall, setOverall] = useState<number>(0)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -78,7 +79,9 @@ export default function RoutineAdherence({ weekly }: Props) {
       let totalMatch = 0, totalSlots = 0
       for (const e of dayMap.values()) { totalMatch += e.match; totalSlots += e.total }
       setOverall(totalSlots > 0 ? Math.round((totalMatch / totalSlots) * 100) : 0)
+      setLoading(false)
     }
+    setLoading(true)
     load()
   }, [weekly])
 
@@ -88,7 +91,8 @@ export default function RoutineAdherence({ weekly }: Props) {
         <span className="adherence-title">요일별 이행률</span>
         <span className="adherence-overall">지난 4주 평균 <strong>{overall}%</strong></span>
       </div>
-      <div className="adherence-bars">
+      {loading ? <div style={{ fontSize: 11, color: '#8a7a74', padding: '8px 0' }}>로딩 중...</div> : null}
+      <div className="adherence-bars" style={loading ? { opacity: 0.3 } : undefined}>
         {stats.map(s => (
           <div key={s.key} className="adherence-bar-row">
             <span className="adherence-day">{s.label}</span>

@@ -109,6 +109,7 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
         if (tearingRef.current) { e.preventDefault(); return }
         e.dataTransfer.setData('ticket-id', ticket.id)
         e.dataTransfer.setData('ticket-status', ticket.status)
+        e.dataTransfer.setData('ticket-activity', activity?.name ?? '')
         e.dataTransfer.effectAllowed = 'move'
         onDragStart(ticket.id)
       }}

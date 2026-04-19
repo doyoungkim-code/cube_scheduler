@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Ticket, KanbanStatus, ActivitySpecificFields } from '../types/kanban'
 import { emptyActivityFields, activityFieldsForName } from '../types/kanban'
@@ -17,6 +17,12 @@ interface Props {
 }
 
 export default function TicketModal({ ticket, defaultStatus, activities, onSave, onDelete, onClose, hideStatus, hideWhy }: Props) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const isEdit = !!ticket
 
   const [title, setTitle] = useState(ticket?.title ?? '')
