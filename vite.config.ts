@@ -6,5 +6,16 @@ export default defineConfig({
   base: './',
   build: {
     outDir: 'dist',
+    target: 'esnext',
+    minify: false,
+    rollupOptions: {
+      treeshake: false,
+      output: {
+        manualChunks: {
+          three: ['three'],
+          r3f: ['@react-three/fiber', '@react-three/drei'],
+        },
+      },
+    },
   },
 })

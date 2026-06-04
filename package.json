@@ -4,22 +4,27 @@
   "description": "Personal Scheduler App",
   "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "concurrently \"vite\" \"node scripts/build-electron.js && electron .\"",
+    "dev": "node scripts/dev.js",
     "build": "vite build && node scripts/build-electron.js",
-    "electron:build": "npm run build && electron-builder && node scripts/apply-icon.js",
-    "electron:dev": "node scripts/build-electron.js && electron ."
+    "electron:build": "node scripts/pack.js",
+    "electron:dev": "node scripts/build-electron.js && node scripts/run-electron.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@react-spring/three": "^10.0.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "@react-three/rapier": "^2.2.0",
     "@types/three": "^0.184.0",
+    "leva": "^0.10.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "three": "^0.184.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
