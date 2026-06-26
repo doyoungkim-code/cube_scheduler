@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"node scripts/build-electron.js && electron .\"",
     "build": "vite build && node scripts/build-electron.js",
-    "electron:build": "npm run build && electron-builder && node scripts/apply-icon.js",
+    "electron:build": "npm run build && electron-builder --win dir && node scripts/apply-icon.js && electron-builder --prepackaged release/win-unpacked --win nsis",
     "electron:dev": "node scripts/build-electron.js && electron ."
   },
   "keywords": [],
@@ -48,6 +48,17 @@
       "target": "dir",
       "icon": "public/icon.ico",
       "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Scheduler",
+      "artifactName": "Scheduler-Setup-${version}.${ext}",
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
     }
   }
 }
