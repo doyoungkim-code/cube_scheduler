@@ -299,7 +299,7 @@ function DayReportCard({ day, rawSlots }: { day: DayView; rawSlots: Record<numbe
         </div>
         <div className="report-section">
           <div className="report-section-title">SUMMARY ({fmtTime(totalMins)})</div>
-          {stats.length === 0 ? <div className="report-empty">기록된 활동이 없습니다</div> : (
+          {stats.length === 0 ? <div className="report-empty">기록된 활동이 없어요</div> : (
             <div className="report-stats">{stats.map(s=>(
               <div key={s.title} className="report-stat-row">
                 <span className="report-stat-dot" style={{background:s.color}}/><span className="report-stat-label">{s.title}</span>
@@ -351,7 +351,7 @@ function WeekReportCard({ weekData }: { weekData: { date: string; stats: RecordG
         </div>
         <div className="report-section">
           <div className="report-section-title">TOTAL: {fmtTime(weekTotal)}</div>
-          {weekStats.length === 0 ? <div className="report-empty">기록된 활동이 없습니다</div> : (
+          {weekStats.length === 0 ? <div className="report-empty">기록된 활동이 없어요</div> : (
             <div className="report-stats">{weekStats.map(s=>(
               <div key={s.title} className="report-stat-row">
                 <span className="report-stat-dot" style={{background:s.color}}/><span className="report-stat-label">{s.title}</span>
@@ -425,7 +425,7 @@ export default function PatternAnalysisView() {
   return (
     <ViewShell
       title="대시보드"
-      description="하루 / 주간 활동 리포트를 보고 블로그용 HTML로 복사합니다."
+      description="하루 / 주간 활동 리포트를 보고 블로그용 HTML로 복사해요."
       actions={
         <>
           {copyMsg && <span className="share-copy-msg">{copyMsg}</span>}

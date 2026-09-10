@@ -1,5 +1,6 @@
 import type { TaskGroup } from '../lib/slots'
 import { fmtMin, fmtDuration } from '../lib/slots'
+import { inkOn } from '../lib/color'
 
 interface Props {
   group: TaskGroup
@@ -23,7 +24,7 @@ export default function SlotGroupCard({ group: g, highlightNow, onClick, onDelet
       <div className="tt-ticket-stripe" style={{ background: g.color }} />
       <div className="tt-ticket-body">
         <div className="tt-ticket-header">
-          <span className="tt-ticket-type" style={{ background: g.color }}>{g.label}</span>
+          <span className="tt-ticket-type" style={{ background: g.color, color: inkOn(g.color) }}>{g.label}</span>
           <span className="tt-ticket-time">{fmtMin(g.startMin)}~{fmtMin(g.endMin)}</span>
           <span className="tt-ticket-duration">{fmtDuration(g.endMin - g.startMin)}</span>
           <button

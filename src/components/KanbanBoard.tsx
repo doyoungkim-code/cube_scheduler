@@ -4,6 +4,7 @@ import type { Activity } from '../types/schedule'
 import KanbanColumn from './KanbanColumn'
 import TicketModal from './TicketModal'
 import { KANBAN_STATUSES, STATUS_LABELS } from '../lib/kanban'
+import { toastUndo } from '../store/ui'
 
 /** columns: 가로 3열 / stack: 세로 3단(넓은 화면 오른쪽 열) / tabs: 탭으로 한 컬럼씩(모바일) */
 export type KanbanVariant = 'columns' | 'stack' | 'tabs'
@@ -49,6 +50,7 @@ export default function KanbanBoard({
     deleteTicket(id)
     setShowModal(false)
     setEditingTicket(null)
+    toastUndo('티켓을 지웠어요')
   }
 
   const handleDragOver = (_e: React.DragEvent, status: KanbanStatus, index: number) => {
@@ -73,7 +75,7 @@ export default function KanbanBoard({
   return (
     <div className={`kanban kanban--${variant}`}>
       <div className="kanban-header">
-        <span className="kanban-title">Board</span>
+        <span className="kanban-title">보드</span>
         <button className="btn-action" onClick={() => handleAdd(variant === 'tabs' ? tab : 'todo')}>+ 티켓 추가</button>
       </div>
 
@@ -102,7 +104,7 @@ export default function KanbanBoard({
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onMove={moveToEnd}
-            onTearOff={(id) => moveToEnd(id, 'done')}
+            onTearOff={(id) => { moveToEnd(id, 'done'); toastUndo('완료로 옮겼어요') }}
           />
         ))}
       </div>

@@ -53,7 +53,7 @@ function HourDetail({ hour, day, rawSlots, routines, selectedActivity, activitie
 
       {groups.length === 0 && !(canAdd && hasEmpty) ? (
         <div className="tt-current-empty">
-          {selectedActivity?.id === ERASER_ACTIVITY.id ? '지울 기록이 없어요' : '등록된 일정 없음'}
+          {selectedActivity?.id === ERASER_ACTIVITY.id ? '지울 기록이 없어요' : '이 시간엔 기록이 없어요'}
         </div>
       ) : (
         <div className="tt-current-groups">

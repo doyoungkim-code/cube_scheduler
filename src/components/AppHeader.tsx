@@ -2,6 +2,7 @@ import type { ViewId } from '../types/navigation'
 import { useAuth } from '../auth/AuthContext'
 import Icon, { type IconName } from './Icon'
 import { useNow } from '../hooks/useNow'
+import { useSaveStatus } from '../hooks/useSaveStatus'
 import { pad2 } from '../lib/slots'
 
 interface NavItem { id: ViewId; icon: IconName; label: string }
@@ -23,6 +24,11 @@ interface Props {
 export default function AppHeader({ currentView, onNavigate }: Props) {
   const { user, status } = useAuth()
   const now = useNow(15000)
+  const save = useSaveStatus()
+  const saveLabel = !save.online ? { cls: 'offline', text: '오프라인' }
+    : save.failed ? { cls: 'error', text: '저장 실패 · 재시도 중' }
+    : save.pending > 0 ? { cls: 'saving', text: '저장 중' }
+    : null
   const clock = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`
   const initial = (user?.displayName || user?.email || '?').slice(0, 1).toUpperCase()
 
@@ -48,6 +54,7 @@ export default function AppHeader({ currentView, onNavigate }: Props) {
         </nav>
 
         <div className="topbar-right">
+          {saveLabel && <span className={`save-status save-status--${saveLabel.cls}`} title={saveLabel.text}>{saveLabel.text}</span>}
           <span className="topbar-clock">{clock}</span>
           <button
             className="topbar-avatar"

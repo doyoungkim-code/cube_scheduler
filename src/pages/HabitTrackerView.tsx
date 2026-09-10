@@ -5,6 +5,7 @@ import RoutineAdherence from '../components/RoutineAdherence'
 import HabitChecklist from '../components/HabitChecklist'
 import { useVisibleActivities, useWeeklyRoutines } from '../hooks/useDayData'
 import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from '../types/schedule'
+import { inkOn } from '../lib/color'
 import type { Activity, WeeklyRoutinesView, DayOfWeek, RoutineView } from '../types/schedule'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -75,7 +76,7 @@ export default function HabitTrackerView() {
         <div className="habit-palette">
           <button
             className={`palette-chip palette-chip--sleep ${selectedId === SLEEP_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
-            style={{ '--chip': SLEEP_ACTIVITY.color } as React.CSSProperties}
+            style={{ '--chip': SLEEP_ACTIVITY.color, '--chip-ink': inkOn(SLEEP_ACTIVITY.color) } as React.CSSProperties}
             aria-pressed={selectedId === SLEEP_ACTIVITY.id}
             onClick={() => setSelectedId(selectedId === SLEEP_ACTIVITY.id ? null : SLEEP_ACTIVITY.id)}
           >
@@ -85,7 +86,7 @@ export default function HabitTrackerView() {
             <button
               key={a.id}
               className={`palette-chip ${selectedId === a.id ? 'palette-chip--selected' : ''}`}
-              style={{ '--chip': a.color } as React.CSSProperties}
+              style={{ '--chip': a.color, '--chip-ink': inkOn(a.color) } as React.CSSProperties}
               onClick={() => setSelectedId(selectedId === a.id ? null : a.id)}
             >
               {a.name}

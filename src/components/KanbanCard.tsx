@@ -3,12 +3,13 @@ import type { Ticket, KanbanStatus } from '../types/kanban'
 import type { Activity } from '../types/schedule'
 import { beginTicketDrag, endTicketDrag } from '../lib/dragState'
 import { STATUS_STAMPS } from '../lib/kanban'
+import { inkOn } from '../lib/color'
 
 /** 상태별로 카드에 표시할 이동 버튼 */
 const MOVE_TARGETS: Record<KanbanStatus, { status: KanbanStatus; label: string }[]> = {
-  todo: [{ status: 'progress', label: 'Progress →' }],
-  progress: [{ status: 'todo', label: '← To Do' }, { status: 'done', label: 'Done →' }],
-  done: [{ status: 'progress', label: '← Progress' }],
+  todo: [{ status: 'progress', label: '진행 중 →' }],
+  progress: [{ status: 'todo', label: '← 할 일' }, { status: 'done', label: '완료 →' }],
+  done: [{ status: 'progress', label: '← 진행 중' }],
 }
 
 const TEAR_THRESHOLD = 50
@@ -44,6 +45,7 @@ function getActivityDetail(ticket: Ticket): string | null {
 export default function KanbanCard({ ticket, activities, showMoveButtons, onClick, onDragEnd, onMove, onTearOff }: Props) {
   const activity = activities.find(a => a.id === ticket.activityId)
   const accentColor = activity?.color ?? '#8e8e93'
+  const accentInk = inkOn(accentColor)
   const created = new Date(ticket.createdAt)
   const dateStr = created.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })
   const timeStr = created.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -126,7 +128,7 @@ export default function KanbanCard({ ticket, activities, showMoveButtons, onClic
       {/* 왼쪽 메인 바디 */}
       <div className="cinema-ticket-body">
         {/* 상단 컬러 헤더 */}
-        <div className="cinema-ticket-topbar" style={{ background: accentColor }}>
+        <div className="cinema-ticket-topbar" style={{ background: accentColor, color: accentInk }}>
           <span className="cinema-ticket-topbar-title">{activity?.name ?? 'TICKET'}</span>
           <div className="cinema-ticket-topbar-right">
             <span>DATE</span>
@@ -166,7 +168,7 @@ export default function KanbanCard({ ticket, activities, showMoveButtons, onClic
       {/* 오른쪽 스텁 */}
       <div
         className={`cinema-ticket-stub ${isProgress && !tornOff ? 'cinema-ticket-stub--tearable' : ''}`}
-        style={{ ...stubDragStyle, backgroundColor: accentColor }}
+        style={{ ...stubDragStyle, backgroundColor: accentColor, color: accentInk }}
         onPointerDown={handleStubPointerDown}
       >
         <div className="cinema-ticket-stub-label">#{ticketNumber}</div>

@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Activity } from '../types/schedule'
 import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from '../types/schedule'
+import { inkOn } from '../lib/color'
+import { toastUndo } from '../store/ui'
 
 const PALETTE_COLORS = [
   '#4a9eff', '#34c759', '#ff9500', '#ff3b30',
@@ -43,8 +45,11 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
   }
 
   const handleDelete = (id: string) => {
+    const name = activities.find(a => a.id === id)?.name ?? '활동'
     onChange(activities.filter(a => a.id !== id))
     if (selectedId === id) onSelect(null)
+    setEditingId(null)
+    toastUndo(`"${name}" 을 팔레트에서 뺐어요 (과거 기록은 그대로)`)
   }
 
   const startEdit = (a: Activity) => {
@@ -72,7 +77,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
         {/* 수면 */}
         <button
           className={`palette-chip palette-chip--sleep ${selectedId === SLEEP_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
-          style={{ '--chip': SLEEP_ACTIVITY.color } as React.CSSProperties}
+          style={{ '--chip': SLEEP_ACTIVITY.color, '--chip-ink': inkOn(SLEEP_ACTIVITY.color) } as React.CSSProperties}
           aria-pressed={selectedId === SLEEP_ACTIVITY.id}
           onClick={() => onSelect(selectedId === SLEEP_ACTIVITY.id ? null : SLEEP_ACTIVITY.id)}
           title="수면: 드래그로 수면 시간 칠하기"
@@ -118,7 +123,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
             <button
               key={a.id}
               className={`palette-chip ${selectedId === a.id ? 'palette-chip--selected' : ''}`}
-              style={{ '--chip': a.color } as React.CSSProperties}
+              style={{ '--chip': a.color, '--chip-ink': inkOn(a.color) } as React.CSSProperties}
               aria-pressed={selectedId === a.id}
               onClick={() => onSelect(selectedId === a.id ? null : a.id)}
               onContextMenu={e => handleContextMenu(e, a)}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { useHabits, useHabitChecks, useHabitStreaks, todayHabitKey, type Habit } from '../hooks/useHabits'
+import { toastUndo } from '../store/ui'
 
 const COLORS = ['#4a9eff', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa', '#ffcc00', '#30b0c7']
 
@@ -33,7 +34,9 @@ export default function HabitChecklist() {
   }
 
   const deleteHabit = (id: string) => {
+    const name = habits.find(h => h.id === id)?.name ?? '습관'
     saveHabits(habits.filter(h => h.id !== id))
+    toastUndo(`"${name}" 습관을 지웠어요`)
   }
 
   return (
@@ -44,7 +47,7 @@ export default function HabitChecklist() {
       </div>
 
       {habits.length === 0 && !adding && (
-        <div className="habits-empty">아직 등록된 습관이 없습니다</div>
+        <div className="habits-empty">아직 습관이 없어요. 아래에서 하나 추가해 보세요.</div>
       )}
 
       <div className="habits-list">

@@ -6,7 +6,7 @@ import type { Ticket, KanbanStatus } from '../types/kanban'
 export const KANBAN_STATUSES: KanbanStatus[] = ['todo', 'progress', 'done']
 
 /** 컬럼 제목 / 탭 이름 */
-export const STATUS_LABELS: Record<KanbanStatus, string> = { todo: 'To Do', progress: 'Progress', done: 'Done' }
+export const STATUS_LABELS: Record<KanbanStatus, string> = { todo: '할 일', progress: '진행 중', done: '완료' }
 
 /** 티켓 카드에 찍히는 스탬프 문구 */
 export const STATUS_STAMPS: Record<KanbanStatus, string> = { todo: 'TO DO', progress: 'IN PROGRESS', done: 'COMPLETE' }

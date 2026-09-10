@@ -32,7 +32,7 @@ export default function QuickMemoView() {
   return (
     <ViewShell
       title="메모"
-      description="날짜별로 짧은 메모나 한 줄 일기를 남깁니다. 홈 화면의 메모와 같은 내용입니다."
+      description="날짜별로 짧은 메모나 한 줄 일기를 남겨요. 홈 화면의 메모와 같은 내용이에요."
       actions={
         <>
           <button className="datebar-nav" aria-label="이전 날" onClick={() => setDateKey(shiftDateKey(dateKey, -1))}>‹</button>

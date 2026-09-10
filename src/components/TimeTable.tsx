@@ -8,6 +8,7 @@ import SlotRecordModal from './SlotRecordModal'
 import { TOTAL_MIN, fmtMin, groupAllSlots, buildRoutineMap, type TaskGroup } from '../lib/slots'
 import { useNowMinute } from '../hooks/useNow'
 import { getTicketDrag } from '../lib/dragState'
+import { inkOn } from '../lib/color'
 
 interface TimeTableProps {
   day: DayView
@@ -169,7 +170,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
           {(currentSlot || currentRoutine) && (
             <span
               className="timetable-current-activity"
-              style={{ backgroundColor: currentSlot?.color ?? currentRoutine?.color }}
+              style={{ backgroundColor: currentSlot?.color ?? currentRoutine?.color, color: inkOn(currentSlot?.color ?? currentRoutine?.color ?? '') }}
             >
               {currentSlot?.label ?? currentRoutine?.name}
             </span>
@@ -412,7 +413,7 @@ function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, activitie
         <span className="tt-current-time">{fmtMin(hourStart)} ~ {fmtMin(hourEnd)}</span>
       </div>
       {groups.length === 0 ? (
-        <div className="tt-current-empty">등록된 일정 없음</div>
+        <div className="tt-current-empty">지금 시간대엔 기록이 없어요</div>
       ) : (
         <div className="tt-current-groups">
           {groups.map(g => (

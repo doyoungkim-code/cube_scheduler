@@ -1,5 +1,6 @@
 import { useNow } from '../hooks/useNow'
 import { pad2 } from '../lib/slots'
+import { inkOn } from '../lib/color'
 
 interface Props {
   roomImg: string
@@ -27,8 +28,8 @@ export default function RoomCard({ roomImg, currentLabel, currentColor }: Props)
         </div>
         <div className="room-card-activity">
           {currentLabel
-            ? <span className="room-card-pill" style={{ background: currentColor }}>{currentLabel}</span>
-            : <span className="room-card-pill room-card-pill--empty">지금 하는 일 없음</span>}
+            ? <span className="room-card-pill" style={{ background: currentColor, color: currentColor ? inkOn(currentColor) : undefined }}>{currentLabel}</span>
+            : <span className="room-card-pill room-card-pill--empty">지금 하는 일이 없어요</span>}
         </div>
       </div>
     </section>

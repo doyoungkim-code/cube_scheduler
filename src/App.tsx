@@ -10,11 +10,13 @@ import TodaySummary from './components/TodaySummary'
 import WeekStrip from './components/WeekStrip'
 import QuickMemo from './components/QuickMemo'
 import HabitChecklist from './components/HabitChecklist'
+import Toaster from './components/Toaster'
 import { useDayData, useDaysSlots } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
 import { useMediaQuery, MQ_MOBILE, MQ_WIDE } from './hooks/useMediaQuery'
 import { useNowMinute } from './hooks/useNow'
 import { undoLast } from './store'
+import { toastUndo } from './store/ui'
 import { dateKeyOf, shiftDateKey, parseDateKey } from './lib/slots'
 import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from './types/schedule'
 import { initialViewFromLocation, type ViewId } from './types/navigation'
@@ -74,6 +76,7 @@ function App() {
   useEffect(() => { window.scrollTo({ top: 0 }) }, [currentView])
 
   const isToday = selectedDate === today
+  const ready = data.loaded && kanban.loaded
 
   const selectedActivity = selectedActivityId === SLEEP_ACTIVITY.id
     ? SLEEP_ACTIVITY
@@ -87,6 +90,12 @@ function App() {
   }
 
   const deselectActivity = useCallback(() => setSelectedActivityId(null), [])
+
+  /** 구간 칠하기/지우기. 지운 경우엔 되돌리기 토스트 (모바일엔 Ctrl+Z 가 없다) */
+  const setSlotRange = useCallback((start: number, end: number, activityId: string | null) => {
+    data.setSlotRange(start, end, activityId)
+    if (activityId === null) toastUndo('구간을 지웠어요')
+  }, [data])
 
   const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {
     const ticket = kanban.getTicket(ticketId)
@@ -162,7 +171,7 @@ function App() {
             routines={data.routines}
             selectedActivity={selectedActivity}
             activities={data.activities}
-            onSlotRangeChange={data.setSlotRange}
+            onSlotRangeChange={setSlotRange}
             onRecordChange={data.setRecordRange}
             onDeselectActivity={deselectActivity}
           />
@@ -174,7 +183,7 @@ function App() {
             selectedActivity={selectedActivity}
             activities={data.activities}
             onSlotChange={data.setSlot}
-            onSlotRangeChange={data.setSlotRange}
+            onSlotRangeChange={setSlotRange}
             onRecordChange={data.setRecordRange}
             onTicketDrop={handleTicketDropOnSlot}
             onDeselectActivity={deselectActivity}
@@ -231,7 +240,8 @@ function App() {
   return (
     <div className="app">
       <AppHeader currentView={currentView} onNavigate={setCurrentView} />
-      <main className="app-content">{page}</main>
+      <main className={`app-content ${ready ? '' : 'app-content--loading'}`} aria-busy={!ready}>{page}</main>
+      <Toaster />
 
       {showCalendar && (
         <div className="modal-backdrop" onClick={() => setShowCalendar(false)}>

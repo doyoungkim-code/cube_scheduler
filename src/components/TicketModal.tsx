@@ -140,9 +140,9 @@ export default function TicketModal({ ticket, defaultStatus, activities, onSave,
                     value={status}
                     onChange={e => setStatus(e.target.value as KanbanStatus)}
                   >
-                    <option value="todo">To Do</option>
-                    <option value="progress">Progress</option>
-                    <option value="done">Done</option>
+                    <option value="todo">할 일</option>
+                    <option value="progress">진행 중</option>
+                    <option value="done">완료</option>
                   </select>
                 </div>
               )}

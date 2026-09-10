@@ -16,7 +16,13 @@ import { getDb } from './firebase'
 /** 바깥에서 값이 바뀌었을 때 호출. value 가 null 이면 삭제됨. */
 export type StorageListener = (key: string, value: unknown) => void
 
+/** 저장 진행 상태 (헤더 표시용). pending: 아직 서버에 안 올라간 키 수, failed: 마지막 쓰기가 실패해 재시도 대기 중 */
+export interface SaveStatus { pending: number; failed: boolean }
+export type SaveStatusListener = (s: SaveStatus) => void
+
 export interface StorageBackend {
+  /** 저장 진행 상태 알림 (선택). 동기 저장 백엔드는 구현하지 않아도 된다. */
+  onSaveStatus?(listener: SaveStatusListener): () => void
   loadData(key: string): Promise<unknown>
   saveData(key: string, data: unknown): Promise<boolean>
   listKeys(prefix: string): Promise<string[]>
@@ -135,6 +141,8 @@ export class FirestoreBackend implements StorageBackend {
   private timers = new Map<string, ReturnType<typeof setTimeout>>()
   private retryTimer: ReturnType<typeof setTimeout> | null = null
   private disposed = false
+  private failed = false
+  private statusListeners = new Set<SaveStatusListener>()
   private onHidden = () => { void this.flush() }
   private onVisibility = () => {
     if (document.visibilityState === 'hidden') this.onHidden()
@@ -187,6 +195,7 @@ export class FirestoreBackend implements StorageBackend {
     const t = this.timers.get(key)
     if (t) clearTimeout(t)
     this.timers.set(key, setTimeout(() => { void this.write(key) }, SAVE_DEBOUNCE_MS))
+    this.emitStatus()
     return true
   }
 
@@ -210,11 +219,25 @@ export class FirestoreBackend implements StorageBackend {
       await setDoc(doc(getDb(), 'users', this.uid, 'store', key), payload)
       // 쓰는 동안 새 saveData 가 오지 않았을 때만 pending 에서 제거
       if (this.pending.get(key)?.version === entry.version) this.pending.delete(key)
+      this.failed = false
     } catch (err) {
       console.error('[storage] save failed', key, err)
       // pending 에 남겨 두고 잠시 뒤 재시도
+      this.failed = true
       this.scheduleRetry()
     }
+    this.emitStatus()
+  }
+
+  private emitStatus(): void {
+    const s: SaveStatus = { pending: this.pending.size, failed: this.failed }
+    for (const l of this.statusListeners) l(s)
+  }
+
+  onSaveStatus(listener: SaveStatusListener): () => void {
+    this.statusListeners.add(listener)
+    listener({ pending: this.pending.size, failed: this.failed })
+    return () => { this.statusListeners.delete(listener) }
   }
 
   private scheduleRetry(): void {
@@ -256,15 +279,30 @@ type BackendListener = () => void
 let current: StorageBackend = new LocalStorageBackend()
 const externalListeners = new ListenerSet()
 const backendListeners = new Set<BackendListener>()
+const statusListeners = new Set<SaveStatusListener>()
+const IDLE: SaveStatus = { pending: 0, failed: false }
+let lastStatus: SaveStatus = IDLE
 let detachCurrent: () => void = current.subscribe((k, v) => externalListeners.emit(k, v))
+let detachStatus: () => void = () => {}
+
+function attachStatus(backend: StorageBackend): () => void {
+  if (!backend.onSaveStatus) {
+    lastStatus = IDLE
+    for (const l of statusListeners) l(IDLE)
+    return () => {}
+  }
+  return backend.onSaveStatus(s => { lastStatus = s; for (const l of statusListeners) l(s) })
+}
 
 export function setStorageBackend(backend: StorageBackend): void {
   if (current === backend) return
   const old = current
   detachCurrent()
+  detachStatus()
   void old.dispose()   // 남은 쓰기는 old 가 스스로 flush 한 뒤 구독을 끊는다
   current = backend
   detachCurrent = backend.subscribe((k, v) => externalListeners.emit(k, v))
+  detachStatus = attachStatus(backend)
   for (const l of backendListeners) l()
 }
 
@@ -286,4 +324,11 @@ export const storage = {
     backendListeners.add(listener)
     return () => { backendListeners.delete(listener) }
   },
+  /** 저장 진행 상태. 구독 즉시 현재 값을 한 번 준다. */
+  onSaveStatus: (listener: SaveStatusListener) => {
+    statusListeners.add(listener)
+    listener(lastStatus)
+    return () => { statusListeners.delete(listener) }
+  },
+  getSaveStatus: (): SaveStatus => lastStatus,
 }

@@ -5,6 +5,7 @@ import type { DayView } from '../hooks/useDayData'
 import SlotRecordModal from './SlotRecordModal'
 import { TOTAL_MIN, fmtMin, fmtDuration, groupAllSlots, buildRoutineMap, type TaskGroup } from '../lib/slots'
 import { useNowMinute } from '../hooks/useNow'
+import { inkOn } from '../lib/color'
 
 const PX_PER_10MIN = 10
 const TRACK_H = (TOTAL_MIN / 10) * PX_PER_10MIN
@@ -130,7 +131,7 @@ export default function TimelineVertical({
       </div>
 
       {paintDrag && (
-        <div className="vtl-drag-badge" style={{ background: selectedActivity?.color }}>
+        <div className="vtl-drag-badge" style={{ background: selectedActivity?.color, color: inkOn(selectedActivity?.color ?? "") }}>
           {fmtMin(dragStart)} ~ {fmtMin(dragEnd)} · {fmtDuration(dragEnd - dragStart)}
         </div>
       )}
@@ -157,14 +158,18 @@ export default function TimelineVertical({
             const height = ((g.endMin - g.startMin) / 10) * PX_PER_10MIN
             const title = g.record?.title
             const showText = height >= 28
+            const compact = !showText && height >= 18   // 20분 구간: 한 줄로
             return (
               <div
                 key={i}
                 className={`vtl-seg ${g.isRoutine ? 'vtl-seg--routine' : ''} ${g.containsNow ? 'vtl-seg--now' : ''}`}
-                style={{ top, height, background: g.color }}
+                style={{ top, height, background: g.color, color: inkOn(g.color) }}
                 onClick={() => openGroup(g)}
-                title={g.isRoutine ? `루틴: ${g.label}` : undefined}
+                title={g.isRoutine ? `루틴: ${g.label}` : `${g.label} ${fmtMin(g.startMin)}–${fmtMin(g.endMin)}`}
               >
+                {compact && (
+                  <div className="vtl-seg-compact">{g.label} · {fmtDuration(g.endMin - g.startMin)}</div>
+                )}
                 {showText && (
                   <div className="vtl-seg-text">
                     <span className="vtl-seg-label">{g.label}</span>
