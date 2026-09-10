@@ -22,7 +22,7 @@ export default function KanbanBoard({
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [newTicketStatus, setNewTicketStatus] = useState<KanbanStatus>('todo')
-  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ status: KanbanStatus; index: number } | null>(null)
 
   const handleAdd = (status: KanbanStatus) => {

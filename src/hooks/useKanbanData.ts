@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Ticket, KanbanStatus } from '../types/kanban'
+import { storage } from '../lib/storage'
 
 export function useKanbanData() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -9,12 +10,10 @@ export function useKanbanData() {
   useEffect(() => {
     let cancelled = false
     async function load() {
-      if (window.electronAPI) {
-        try {
-          const saved = await window.electronAPI.loadData('tickets') as Ticket[] | null
-          if (!cancelled && saved) setTickets(saved)
-        } catch { /* ignore */ }
-      }
+      try {
+        const saved = await storage.loadData('tickets') as Ticket[] | null
+        if (!cancelled && saved) setTickets(saved)
+      } catch { /* ignore */ }
       if (!cancelled) setLoaded(true)
     }
     load()
@@ -23,7 +22,7 @@ export function useKanbanData() {
 
   useEffect(() => {
     if (!loaded || !dirty.current) return
-    if (window.electronAPI) window.electronAPI.saveData('tickets', tickets)
+    storage.saveData('tickets', tickets)
   }, [tickets, loaded])
 
   const addTicket = useCallback((ticket: Ticket) => {

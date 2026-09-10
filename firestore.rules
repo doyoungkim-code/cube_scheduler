@@ -1,0 +1,43 @@
+// Firestore 보안 규칙
+// Firebase 콘솔 > Firestore Database > 규칙 탭에 이 내용을 붙여넣고 "게시" 하세요.
+// ADMIN_EMAIL 은 src/lib/firebaseConfig.ts 의 값과 동일하게 유지해야 합니다.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email == 'kwat09k@gmail.com';
+    }
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function isApproved(uid) {
+      return exists(/databases/$(database)/documents/members/$(uid))
+        && get(/databases/$(database)/documents/members/$(uid)).data.status == 'approved';
+    }
+
+    // 가입 요청 / 승인 상태
+    match /members/{uid} {
+      // 본인 문서는 본인이, 전체 목록은 관리자만
+      allow get: if isSelf(uid) || isAdmin();
+      allow list: if isAdmin();
+      // 본인이 최초 1회 'pending' 으로만 생성 가능 (관리자는 제한 없음)
+      allow create: if isAdmin() || (
+        isSelf(uid)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'photoURL', 'status', 'requestedAt'])
+      );
+      // 승인 / 해제 / 삭제는 관리자만
+      allow update, delete: if isAdmin();
+    }
+
+    // 사용자별 스케줄 데이터: 본인 + 승인된 사용자만 (관리자는 항상 허용)
+    match /users/{uid}/store/{key} {
+      allow read, write: if isSelf(uid) && (isAdmin() || isApproved(uid));
+    }
+  }
+}

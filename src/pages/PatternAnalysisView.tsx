@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import ViewShell from '../components/ViewShell'
 import { useDayData, todayKey } from '../hooks/useDayData'
 import type { DayData, TimeSlot } from '../types/schedule'
+import { storage } from '../lib/storage'
 
 const DAY_NAMES_FULL = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
 const DAY_NAMES_SHORT = ['월', '화', '수', '목', '금', '토', '일']
@@ -371,7 +372,6 @@ export default function PatternAnalysisView({ onGoHome }: { onGoHome: () => void
   useEffect(() => {
     if (mode !== 'week') return
     async function load() {
-      if (!window.electronAPI) return
       const sel = new Date(selectedDate + 'T00:00:00')
       const dayOfWeek = sel.getDay()
       const monday = new Date(sel)
@@ -382,7 +382,7 @@ export default function PatternAnalysisView({ onGoHome }: { onGoHome: () => void
         const d = new Date(monday)
         d.setDate(monday.getDate() + i)
         const dk = dateKey(d)
-        const saved = await window.electronAPI.loadData(`day-${dk}`) as DayData | null
+        const saved = await storage.loadData(`day-${dk}`) as DayData | null
         if (saved?.slots) {
           const groups = groupSlotRecords(saved.slots)
           results.push({ date: dk, stats: groups, total: groups.reduce((s, g) => s + g.minutes, 0), slots: saved.slots })
@@ -405,12 +405,21 @@ export default function PatternAnalysisView({ onGoHome }: { onGoHome: () => void
       ? buildDayHtml(data.day, data.rawDay.slots)
       : buildWeekHtml(weekData)
 
-    if (window.electronAPI?.copyHtmlToClipboard) {
-      await window.electronAPI.copyHtmlToClipboard(html, html)
+    try {
+      // HTML + 텍스트를 함께 복사 (Notion, 메일 등에 서식 유지)
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([html], { type: 'text/plain' }),
+          }),
+        ])
+      } else {
+        await navigator.clipboard.writeText(html)
+      }
       setCopyMsg('복사 완료!')
-    } else {
-      await navigator.clipboard.writeText(html)
-      setCopyMsg('복사 완료!')
+    } catch {
+      setCopyMsg('복사 실패')
     }
     setTimeout(() => setCopyMsg(''), 2000)
 

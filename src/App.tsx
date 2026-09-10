@@ -81,7 +81,6 @@ function App() {
   const toggleCollapse = useCallback(() => {
     const next = !collapsed
     setCollapsed(next)
-    window.electronAPI?.toggleCollapse(next)
   }, [collapsed])
 
   const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {

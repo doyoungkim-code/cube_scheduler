@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { storage } from '../lib/storage'
 
 interface Habit {
   id: string
@@ -32,10 +33,9 @@ export default function HabitChecklist() {
   // 초기 로드
   useEffect(() => {
     async function load() {
-      if (!window.electronAPI) return
-      const savedHabits = await window.electronAPI.loadData('habits') as Habit[] | null
+      const savedHabits = await storage.loadData('habits') as Habit[] | null
       if (savedHabits) setHabits(savedHabits)
-      const todayCheck = await window.electronAPI.loadData(`habit-checks-${today}`) as HabitCheck | null
+      const todayCheck = await storage.loadData(`habit-checks-${today}`) as HabitCheck | null
       if (todayCheck) setTodayChecks(todayCheck.habitIds)
       setLoaded(true)
     }
@@ -44,7 +44,7 @@ export default function HabitChecklist() {
 
   // 스트릭 계산 (최적화: 날짜별로 한 번만 로드, 최대 60일)
   useEffect(() => {
-    if (!loaded || !window.electronAPI || habits.length === 0) return
+    if (!loaded || habits.length === 0) return
     let cancelled = false
     async function compute() {
       // 날짜별 체크 데이터를 한번에 로드 (최대 60일)
@@ -53,7 +53,7 @@ export default function HabitChecklist() {
         const d = new Date()
         d.setDate(d.getDate() - i)
         const dk = dateKey(d)
-        const check = await window.electronAPI!.loadData(`habit-checks-${dk}`) as HabitCheck | null
+        const check = await storage.loadData(`habit-checks-${dk}`) as HabitCheck | null
         if (cancelled) return
         checkMap.set(dk, check?.habitIds ?? [])
       }
@@ -80,12 +80,12 @@ export default function HabitChecklist() {
 
   const saveHabits = useCallback((next: Habit[]) => {
     setHabits(next)
-    window.electronAPI?.saveData('habits', next)
+    storage.saveData('habits', next)
   }, [])
 
   const saveTodayChecks = useCallback((next: string[]) => {
     setTodayChecks(next)
-    window.electronAPI?.saveData(`habit-checks-${today}`, { habitIds: next })
+    storage.saveData(`habit-checks-${today}`, { habitIds: next })
   }, [today])
 
   const toggleCheck = (id: string) => {

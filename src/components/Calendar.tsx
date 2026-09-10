@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { storage } from '../lib/storage'
 
 interface CalendarProps {
   selectedDate: string       // YYYY-MM-DD
@@ -28,12 +29,10 @@ function Calendar({ selectedDate, onSelectDate, todayKey }: CalendarProps) {
   // 저장된 날짜 목록 로드
   useEffect(() => {
     async function loadKeys() {
-      if (window.electronAPI) {
-        const keys = await window.electronAPI.listDayKeys()
-        // keys are like "day-2026-03-23", extract the date part
-        const dates = new Set(keys.map(k => k.replace('day-', '')))
-        setSavedDates(dates)
-      }
+      const keys = await storage.listDayKeys()
+      // keys are like "day-2026-03-23", extract the date part
+      const dates = new Set(keys.map(k => k.replace('day-', '')))
+      setSavedDates(dates)
     }
     loadKeys()
   }, [selectedDate]) // 날짜 변경 시 갱신

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { DayData, WeeklyRoutines, DayOfWeek } from '../types/schedule'
 import { dayKeyFromDate } from '../types/schedule'
+import { storage } from '../lib/storage'
 
 interface Props {
   weekly: WeeklyRoutines
@@ -29,7 +30,6 @@ export default function RoutineAdherence({ weekly }: Props) {
 
   useEffect(() => {
     async function load() {
-      if (!window.electronAPI) return
       // 지난 28일 집계
       const dayMap = new Map<DayOfWeek, { match: number; total: number; samples: Set<string> }>()
       for (const d of DAY_LABELS) {
@@ -45,7 +45,7 @@ export default function RoutineAdherence({ weekly }: Props) {
         const routines = weekly[dayOfWeek]
         if (routines.length === 0) continue
 
-        const saved = await window.electronAPI.loadData(`day-${dk}`) as DayData | null
+        const saved = await storage.loadData(`day-${dk}`) as DayData | null
         if (!saved?.slots) continue
 
         // 루틴 슬롯 계산

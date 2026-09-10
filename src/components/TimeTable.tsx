@@ -37,7 +37,7 @@ function clampMin(m: number): number {
   return Math.max(0, Math.min(1430, m))
 }
 
-function TimeTable({ day, rawSlots, routines, selectedActivity, tickets, activities, onSlotChange, onSlotRangeChange, onTicketDrop, onDeselectActivity }: TimeTableProps) {
+function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSlotChange, onSlotRangeChange, onTicketDrop, onDeselectActivity }: TimeTableProps) {
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const blocksRef = useRef<HTMLDivElement>(null)
   const [ticketDragOver, setTicketDragOver] = useState<{ min: number; label: string } | null>(null)
