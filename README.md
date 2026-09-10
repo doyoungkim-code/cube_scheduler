@@ -67,7 +67,7 @@ Firebase 프로젝트 만들기, 보안 규칙 게시, GitHub Pages 배포, 사�
 | 데이터 | Cloud Firestore, 오프라인 캐시(IndexedDB) |
 | 배포 | GitHub Pages, GitHub Actions (`main` push 시 자동) |
 
-외부 라이브러리는 `firebase`, `uuid`, `zustand` 세 개뿐이다.
+외부 라이브러리는 `firebase`, `uuid`, `zustand`, `zod` 네 개뿐이다.
 
 ## 프로젝트 구조
 
@@ -87,7 +87,11 @@ cube_scheduler/
 │   ├── lib/
 │   │   ├── firebaseConfig.ts      # Firebase 설정값 + 관리자 이메일 (설정은 여기만)
 │   │   ├── firebase.ts            # Auth / Firestore 초기화
-│   │   ├── storage.ts             # 키-값 저장소 추상화 (localStorage / Firestore)
+│   │   ├── storage.ts             # 키-값 저장소 추상화 (localStorage / Firestore) + subscribe
+│   │   ├── day.ts                 # 하루 구간 연산 (칠하기/기록/펼치기), v1→v2 변환 순수 함수
+│   │   ├── kanban.ts              # 칸반 이동·정렬 순수 함수
+│   │   ├── schema.ts              # 저장 문서 zod 스키마 (가져오기 검증)
+│   │   ├── dragState.ts           # HTML5 드래그 중 공유 상태 (티켓 → 타임테이블 드롭)
 │   │   └── slots.ts               # 슬롯 그룹핑·요약·날짜 키 공용 헬퍼
 │   ├── components/
 │   │   ├── AppHeader.tsx          # 상단 헤더 + 모바일 하단 탭바
@@ -102,6 +106,8 @@ cube_scheduler/
 │   │   ├── Calendar.tsx           # 달력
 │   │   ├── KanbanBoard/Column/Card.tsx   # 칸반 보드
 │   │   ├── TicketModal.tsx        # 티켓 / 기록 편집 모달
+│   │   ├── SlotRecordModal.tsx    # 타임라인 구간 → 기록 편집 (TicketModal 재사용)
+│   │   ├── SlotGroupCard.tsx      # 구간 카드 (현재 시간대 / 시간 상세 공용)
 │   │   ├── TicketActivityFields.tsx      # 활동별 세부 항목 폼
 │   │   ├── MiniRoutineTimeTable.tsx      # 루틴 편집용 미니 타임테이블
 │   │   ├── RoutineAdherence.tsx   # 루틴 이행률
@@ -114,7 +120,8 @@ cube_scheduler/
 │   │   ├── QuickMemoView.tsx        # 메모 (편집기 + 최근 목록)
 │   │   └── SettingsView.tsx         # 설정
 │   ├── store/
-│   │   └── index.ts               # Zustand 문서 캐시: useDoc / useDocs / writeDoc / undo, storage 구독
+│   │   ├── index.ts               # Zustand 문서 캐시: useDoc / useDocs / writeDoc / undo, storage 구독
+│   │   └── migrations.ts          # 팔레트 로드 후 v1 문서를 v2 로 1회 변환
 │   ├── hooks/
 │   │   ├── useDayData.ts          # 날짜별 데이터 + 루틴 병합, 활동 팔레트, 요일별 루틴
 │   │   ├── useKanbanData.ts       # 칸반 티켓 CRUD
@@ -152,8 +159,8 @@ Zustand 문서 캐시  docs: { key → JSON }
 
 | 키 | 내용 |
 |----|------|
-| `day-YYYY-MM-DD` | 그 날의 `DayData` (목표, 슬롯) |
-| `activities` | `Activity[]` 팔레트 |
+| `day-YYYY-MM-DD` | 그 날의 `DayData` (목표, 구간 리스트) |
+| `activities` | `Activity[]` 팔레트 (보관된 활동 포함) |
 | `routines-weekly` | 요일별 `Routine[]` |
 | `tickets` | 칸반 `Ticket[]` 전체 |
 | `habits`, `habit-checks-YYYY-MM-DD` | 습관 목록, 날짜별 체크 |
@@ -182,26 +189,30 @@ onAuthStateChanged
 ### 데이터 모델
 
 ```ts
-interface TimeSlot {            // 10분 슬롯
-  label: string                 // 활동 이름
-  color: string
-  detail?: string
-  ticketId?: string             // 칸반 티켓 연결
-  record?: SlotRecord           // 제목 / 설명 / 활동별 세부 항목
-}
-interface DayData { date: string; goal: string; slots: Record<number, TimeSlot> }  // key: 0~1430
+interface Activity { id: string; name: string; color: string; order: number; archived?: boolean }
+// 팔레트에서 지운 활동은 삭제하지 않고 archived 로 숨긴다 (과거 기록이 id 로 참조하므로)
+
+interface DaySegment { start: number; end: number; activityId: string; record?: SlotRecord }  // [start, end) 분, 10분 정렬
+interface DayData { v: 2; date: string; goal: string; segments: DaySegment[] }            // 저장 형식
+interface SlotRecord { title: string; description: string; activityFields?: ActivitySpecificFields }
+
+// 화면은 segments 를 펼친 10분 슬롯 맵(TimeSlot: activityId + 활동에서 조회한 label/color)을 받는다.
+// 활동 이름·색을 바꾸면 과거 기록도 함께 바뀐다.
 
 interface Ticket {
-  id: string; title: string; description: string; why: string
+  id: string; seq?: number      // seq: 표시용 고정 번호 (T12). 삭제돼도 밀리지 않는다
+  title: string; description: string; why: string
   activityId: string
   status: 'todo' | 'progress' | 'done'
   activityFields: ActivitySpecificFields  // exercise | algorithm | general
   order: number; createdAt: string; updatedAt: string
 }
 
-interface Routine { id: string; name: string; color: string; startMin: number; endMin: number }
+interface Routine { id: string; activityId: string; startMin: number; endMin: number }
 type WeeklyRoutines = Record<'weekday' | 'weekend' | DayOfWeek, Routine[]>
 ```
+
+**마이그레이션**: 예전 형식(v1: `slots` 맵에 활동 이름·색 문자열, 루틴에 `name/color`)은 앱을 열면 활동 팔레트가 로드된 뒤 자동으로 v2 로 변환된다(`src/store/migrations.ts`). 팔레트에 없는 이름은 그 이름·색으로 보관(archived) 활동을 만들어 참조를 잇는다. 변환 전 문서도 화면에는 그대로 보인다. 백업 가져오기는 `src/lib/schema.ts` 의 zod 스키마로 검증하고 통과한 문서만 반영한다.
 
 ### 화면 구성
 

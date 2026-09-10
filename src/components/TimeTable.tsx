@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import type { Activity, DayData, Routine, SlotRecord, TimeSlot } from '../types/schedule'
+import type { Activity, RoutineView, SlotRecord, TimeSlot } from '../types/schedule'
 import { ERASER_ACTIVITY } from '../types/schedule'
+import type { DayView } from '../hooks/useDayData'
 import HourDetail from './HourDetail'
 import SlotGroupCard from './SlotGroupCard'
 import SlotRecordModal from './SlotRecordModal'
@@ -9,13 +10,13 @@ import { useNowMinute } from '../hooks/useNow'
 import { getTicketDrag } from '../lib/dragState'
 
 interface TimeTableProps {
-  day: DayData
+  day: DayView
   rawSlots: Record<number, TimeSlot>
-  routines: Routine[]
+  routines: RoutineView[]
   selectedActivity: Activity | null
   activities: Activity[]
-  onSlotChange: (min: number, slot: TimeSlot | null) => void
-  onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
+  onSlotChange: (min: number, activityId: string | null) => void
+  onSlotRangeChange: (startMin: number, endMin: number, activityId: string | null) => void
   onRecordChange: (startMin: number, endMin: number, record: SlotRecord) => void
   onTicketDrop?: (ticketId: string, slotMin: number) => void
   onDeselectActivity?: () => void
@@ -46,7 +47,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
     const ratio = (d.getHours() * 60 + d.getMinutes()) / TOTAL_MIN
     el.scrollLeft = Math.max(0, ratio * el.scrollWidth - el.clientWidth / 2)
   }, [])
-  const [ticketDragOver, setTicketDragOver] = useState<{ min: number; label: string } | null>(null)
+  const [ticketDragOver, setTicketDragOver] = useState<{ min: number; activityId: string } | null>(null)
 
   // 페인트 드래그 상태
   const [paintDrag, setPaintDrag] = useState<{ startMin: number; currentMin: number } | null>(null)
@@ -62,7 +63,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
 
   // 타임테이블 위 mouseDown → 페인트 시작
   // Shift+드래그: 기존 슬롯의 활동으로 연장
-  const [shiftExtend, setShiftExtend] = useState<{ label: string; color: string } | null>(null)
+  const [shiftExtend, setShiftExtend] = useState<{ activityId: string; label: string; color: string } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; min: number } | null>(null)
 
   const justPainted = useRef(false)
@@ -75,7 +76,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
       // Shift: 인접 슬롯의 활동 복사하여 연장
       const slot = day.slots[m] || day.slots[m - 10] || day.slots[m + 10]
       if (slot) {
-        setShiftExtend({ label: slot.label, color: slot.color })
+        setShiftExtend({ activityId: slot.activityId, label: slot.label, color: slot.color })
         setPaintDrag({ startMin: m, currentMin: m })
         return
       }
@@ -105,13 +106,13 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
 
         if (shiftExtend) {
           // Shift+드래그: 해당 활동으로 구간 채움
-          onSlotRangeChange(start, end, { label: shiftExtend.label, color: shiftExtend.color })
+          onSlotRangeChange(start, end, shiftExtend.activityId)
           setShiftExtend(null)
         } else if (selectedActivity) {
           if (selectedActivity.id === ERASER_ACTIVITY.id) {
             onSlotRangeChange(start, end, null)
           } else {
-            onSlotRangeChange(start, end, { label: selectedActivity.name, color: selectedActivity.color })
+            onSlotRangeChange(start, end, selectedActivity.id)
           }
           onDeselectActivity?.()
         }
@@ -200,8 +201,8 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
           e.dataTransfer.dropEffect = 'move'
           const m = minFromMouse(e.clientX)
           // dragover 중엔 getData 가 비어 있으므로 드래그 시작 시 저장한 공유 상태에서 읽는다
-          const label = getTicketDrag()?.activityName ?? ''
-          setTicketDragOver(prev => (prev && prev.min === m && prev.label === label) ? prev : { min: m, label })
+          const activityId = getTicketDrag()?.activityId ?? ''
+          setTicketDragOver(prev => (prev && prev.min === m && prev.activityId === activityId) ? prev : { min: m, activityId })
         }}
         onDragLeave={e => {
           // 자식 블록 사이를 지날 때 발생하는 leave 는 무시 (깜빡임 방지)
@@ -233,7 +234,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
             const inDragRange = paintDrag && m >= dragStart && m < dragEnd
             // 티켓 드롭: 같은 활동 슬롯만 하이라이트
             const isDraggingTicket = ticketDragOver !== null
-            const slotMatchesTicket = isDraggingTicket && slot && ticketDragOver.label && slot.label === ticketDragOver.label
+            const slotMatchesTicket = isDraggingTicket && slot && ticketDragOver.activityId && slot.activityId === ticketDragOver.activityId
             const isTicketDropTarget = isDraggingTicket && m === ticketDragOver.min
 
             let blockStyle: React.CSSProperties | undefined
@@ -356,9 +357,9 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
         if (!slot) return null
         // 연속 구간 찾기 — 직접 칠한 슬롯(rawSlots) 기준. 루틴 유령 슬롯은 삭제 대상이 아니므로 제외.
         let gStart = contextMenu.min
-        while (gStart > 0 && rawSlots[gStart - 10]?.label === slot.label) gStart -= 10
+        while (gStart > 0 && rawSlots[gStart - 10]?.activityId === slot.activityId) gStart -= 10
         let gEnd = contextMenu.min + 10
-        while (gEnd < TOTAL_MIN && rawSlots[gEnd]?.label === slot.label) gEnd += 10
+        while (gEnd < TOTAL_MIN && rawSlots[gEnd]?.activityId === slot.activityId) gEnd += 10
 
         return (
           <>
@@ -383,13 +384,13 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
 }
 
 interface CurrentTasksProps {
-  day: DayData
+  day: DayView
   rawSlots: Record<number, TimeSlot>
-  routineMap: Record<number, Routine>
+  routineMap: Record<number, RoutineView>
   nowMin: number
   nowSlotMin: number
   activities: Activity[]
-  onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
+  onSlotRangeChange: (startMin: number, endMin: number, activityId: string | null) => void
   onRecordChange: (startMin: number, endMin: number, record: SlotRecord) => void
 }
 

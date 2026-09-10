@@ -22,7 +22,7 @@ interface Props {
  */
 export default function SlotRecordModal({ group, activities, onSave, onDelete, onClose }: Props) {
   const draft = useMemo<Ticket>(() => {
-    const act = activities.find(a => a.name === group.label)
+    const act = activities.find(a => a.id === group.activityId)
     const rec = group.record
     return {
       id: '',

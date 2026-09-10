@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
-import type { DayData, WeeklyRoutines, DayOfWeek } from '../types/schedule'
+import type { WeeklyRoutinesView, DayOfWeek } from '../types/schedule'
 import { dayKeyFromDate } from '../types/schedule'
-import { useDocs } from '../store'
 import { dateKeyOf, parseDateKey, shiftDateKey } from '../lib/slots'
-import { dayDocKey } from '../hooks/useDayData'
+import { useDaysSlots } from '../hooks/useDayData'
 
 interface Props {
-  weekly: WeeklyRoutines
+  weekly: WeeklyRoutinesView
 }
 
 interface DayStat {
@@ -29,7 +28,7 @@ export default function RoutineAdherence({ weekly }: Props) {
     () => Array.from({ length: WINDOW_DAYS }, (_, i) => shiftDateKey(today, -i)),
     [today],
   )
-  const docs = useDocs<DayData>(useMemo(() => dateKeys.map(dayDocKey), [dateKeys]))
+  const docs = useDaysSlots(dateKeys)
   const loading = docs.some(d => d === undefined)
 
   const { stats, overall } = useMemo(() => {
@@ -40,16 +39,16 @@ export default function RoutineAdherence({ weekly }: Props) {
       const dayOfWeek = dayKeyFromDate(parseDateKey(dk))
       const routines = weekly[dayOfWeek] ?? []
       if (routines.length === 0) return
-      const saved = docs[i]
-      if (!saved?.slots) return
+      const slots = docs[i]
+      if (!slots || Object.keys(slots).length === 0) return
 
       let total = 0
       let matched = 0
       for (const r of routines) {
         for (let m = r.startMin; m < r.endMin; m += 10) {
           total++
-          const slot = saved.slots[m]
-          if (slot && slot.label === r.name) matched++
+          const slot = slots[m]
+          if (slot && slot.activityId === r.activityId) matched++
         }
       }
       const entry = dayMap.get(dayOfWeek)!

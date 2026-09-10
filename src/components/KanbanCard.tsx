@@ -118,7 +118,7 @@ export default function KanbanCard({ ticket, activities, showMoveButtons, onClic
         e.dataTransfer.setData('ticket-id', ticket.id)
         e.dataTransfer.effectAllowed = 'move'
         // dragover 에서는 getData 를 못 읽으므로 활동 이름은 공유 상태로 전달
-        beginTicketDrag({ ticketId: ticket.id, activityName: activity?.name ?? '' })
+        beginTicketDrag({ ticketId: ticket.id, activityId: ticket.activityId })
       }}
       onDragEnd={() => { endTicketDrag(); onDragEnd() }}
       onClick={tornOff ? undefined : onClick}

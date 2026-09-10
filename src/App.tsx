@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import ActivityPalette from './components/ActivityPalette'
 import TimeTable from './components/TimeTable'
 import Calendar from './components/Calendar'
@@ -10,13 +10,13 @@ import TodaySummary from './components/TodaySummary'
 import WeekStrip from './components/WeekStrip'
 import QuickMemo from './components/QuickMemo'
 import HabitChecklist from './components/HabitChecklist'
-import { useDayData, dayDocKey } from './hooks/useDayData'
+import { useDayData, useDaysSlots } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
 import { useMediaQuery, MQ_MOBILE, MQ_WIDE } from './hooks/useMediaQuery'
 import { useNowMinute } from './hooks/useNow'
-import { useDoc, undoLast } from './store'
+import { undoLast } from './store'
 import { dateKeyOf, shiftDateKey, parseDateKey } from './lib/slots'
-import { SLEEP_ACTIVITY, ERASER_ACTIVITY, type DayData } from './types/schedule'
+import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from './types/schedule'
 import type { ViewId } from './types/navigation'
 import PatternAnalysisView from './pages/PatternAnalysisView'
 import HabitTrackerView from './pages/HabitTrackerView'
@@ -47,7 +47,7 @@ function App() {
   const today = dateKeyOf(new Date())
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
-  const todayDoc = useDoc<DayData>(dayDocKey(today))   // 방 카드용 "지금 하는 일" (선택 날짜와 무관)
+  const [todaySlotsDoc] = useDaysSlots(useMemo(() => [today], [today]))   // 방 카드용 "지금 하는 일" (선택 날짜와 무관)
   const kanban = useKanbanData()
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
@@ -90,29 +90,20 @@ function App() {
 
   const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {
     const ticket = kanban.getTicket(ticketId)
-    if (!ticket) return
-    const activity = data.activities.find(a => a.id === ticket.activityId)
-    if (!activity) return
-    // 같은 활동유형의 슬롯 위에 드롭한 경우에만 연결
-    const existingSlot = data.day.slots[slotMin]
-    if (!existingSlot || existingSlot.label !== activity.name) return
+    if (!ticket || !ticket.activityId) return
+    // 같은 활동의 (직접 칠한) 슬롯 위에 드롭한 경우에만 연결. 루틴 유령 슬롯은 제외.
+    const slots = data.rawDay.slots
+    if (slots[slotMin]?.activityId !== ticket.activityId) return
     // 같은 활동의 연속 구간 찾기
     let start = slotMin
-    while (start > 0 && data.day.slots[start - 10]?.label === activity.name) start -= 10
+    while (start > 0 && slots[start - 10]?.activityId === ticket.activityId) start -= 10
     let end = slotMin + 10
-    while (end < 1440 && data.day.slots[end]?.label === activity.name) end += 10
-    // 티켓 내용을 슬롯 record에 복사 (칸반에는 영향 없음). undo 1단계.
-    const record = {
+    while (end < 1440 && slots[end]?.activityId === ticket.activityId) end += 10
+    // 티켓 내용을 구간 기록으로 복사 (칸반에는 영향 없음). undo 1단계.
+    data.setRecordRange(start, end, {
       title: ticket.title,
       description: ticket.description,
       activityFields: ticket.activityFields,
-    }
-    data.updateSlots(slots => {
-      for (let m = start; m < end; m += 10) {
-        const s = slots[m]
-        if (s) slots[m] = { ...s, detail: ticket.description, record }
-      }
-      return slots
     })
   }, [kanban, data])
 
@@ -120,7 +111,7 @@ function App() {
   const dayName = DAY_NAMES[dateObj.getDay()]
 
   const nowSlotMin = Math.floor(nowMin / 10) * 10
-  const todaySlots = isToday ? data.day.slots : (todayDoc?.slots ?? {})
+  const todaySlots = isToday ? data.day.slots : (todaySlotsDoc ?? {})
   const currentSlot = todaySlots[nowSlotMin]
   const currentLabel = currentSlot?.label ?? ''
   const roomImg = ROOM_MAP[currentLabel] ?? './room.png'

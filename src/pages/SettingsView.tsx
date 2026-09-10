@@ -4,8 +4,11 @@ import { useAuth } from '../auth/AuthContext'
 import AdminPanel from '../auth/AdminPanel'
 import { storage } from '../lib/storage'
 import { writeDoc } from '../store'
+import { rerunMigrations } from '../store/migrations'
+import { validateDoc } from '../lib/schema'
 
 const EXPORT_MARKER = '__scheduler_export__'
+const EXPORT_VERSION = 2
 const KEY_PREFIXES = ['day-', 'routines', 'activities', 'habits', 'habit-checks-', 'tickets', 'memo-']
 
 async function collectAll(): Promise<Record<string, unknown>> {
@@ -30,7 +33,7 @@ export default function SettingsView() {
   const handleExport = async () => {
     setMsg('내보내는 중...')
     const data = await collectAll()
-    const payload = { [EXPORT_MARKER]: 1, exportedAt: new Date().toISOString(), data }
+    const payload = { [EXPORT_MARKER]: EXPORT_VERSION, exportedAt: new Date().toISOString(), data }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -45,29 +48,34 @@ export default function SettingsView() {
     if (!files || files.length === 0) return
     setMsg('가져오는 중...')
     let count = 0
-    let skipped = 0
+    const skipped: string[] = []
+    // 검증을 통과한 문서만 스토어 + 저장소에 반영 (화면 즉시 갱신)
+    const put = (key: string, value: unknown, origin: string) => {
+      const r = validateDoc(key, value)
+      if (!r.ok) { skipped.push(`${origin} → ${key}: ${r.reason}`); return }
+      writeDoc(key, r.value)
+      count++
+    }
     for (const file of Array.from(files)) {
-      if (!file.name.endsWith('.json')) { skipped++; continue }
+      if (!file.name.endsWith('.json')) { skipped.push(`${file.name}: json 아님`); continue }
       let parsed: unknown
-      try { parsed = JSON.parse(await file.text()) } catch { skipped++; continue }
+      try { parsed = JSON.parse(await file.text()) } catch { skipped.push(`${file.name}: JSON 파싱 실패`); continue }
 
       // 1) 이 앱의 백업 파일
       if (parsed && typeof parsed === 'object' && EXPORT_MARKER in (parsed as object)) {
         const data = (parsed as { data: Record<string, unknown> }).data ?? {}
-        for (const [k, v] of Object.entries(data)) {
-          writeDoc(k, v)   // 스토어 + 저장소에 동시에 반영 → 화면 즉시 갱신
-          count++
-        }
+        for (const [k, v] of Object.entries(data)) put(k, v, file.name)
         continue
       }
       // 2) 예전 Electron 버전의 개별 파일 (예: day-2026-03-23.json, tickets.json)
       const key = file.name.replace(/\.json$/, '')
-      if (!KEY_PREFIXES.some(p => key.startsWith(p))) { skipped++; continue }
-      writeDoc(key, parsed)
-      count++
+      if (!KEY_PREFIXES.some(p => key.startsWith(p))) { skipped.push(`${file.name}: 알 수 없는 파일명`); continue }
+      put(key, parsed, file.name)
     }
     await storage.flush()
-    setMsg(`${count}개 항목을 가져왔습니다.${skipped ? ` (${skipped}개 파일 건너뜀)` : ''}`)
+    rerunMigrations()   // v1 형식이 들어왔으면 v2 로 변환
+    const skipMsg = skipped.length ? ` ${skipped.length}개 건너뜀 — ${skipped.slice(0, 3).join(' / ')}${skipped.length > 3 ? ' …' : ''}` : ''
+    setMsg(`${count}개 항목을 가져왔습니다.${skipMsg}`)
     if (fileRef.current) fileRef.current.value = ''
   }
 

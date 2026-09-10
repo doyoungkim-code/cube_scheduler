@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useKeysWithPrefix } from '../store'
-import { hasSlots } from '../lib/storage'
+import { dayHasContent } from '../lib/day'
 import { pad2 } from '../lib/slots'
 
 interface CalendarProps {
@@ -25,7 +25,7 @@ function Calendar({ selectedDate, onSelectDate, todayKey }: CalendarProps) {
   const [navMonth, setNavMonth] = useState(viewMonth)
 
   // 기록이 있는 날짜 (스토어에서 바로, 저장 즉시 반영)
-  const dayKeys = useKeysWithPrefix('day-', hasSlots)
+  const dayKeys = useKeysWithPrefix('day-', dayHasContent)
   const savedDates = useMemo(() => new Set(dayKeys.map(k => k.slice('day-'.length))), [dayKeys])
 
   const prevMonth = () => {

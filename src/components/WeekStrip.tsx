@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
-import type { DayData, TimeSlot } from '../types/schedule'
-import { useDocs } from '../store'
+import type { TimeSlot } from '../types/schedule'
 import { weekOf, compressDayBar, parseDateKey } from '../lib/slots'
-import { dayDocKey } from '../hooks/useDayData'
+import { useDaysSlots } from '../hooks/useDayData'
 
 const DAY_NAMES = ['월', '화', '수', '목', '금', '토', '일']
 
@@ -17,10 +16,10 @@ interface Props {
 /** 이번 주 7일 미니 스트립. 각 날의 타임라인을 가는 색 막대로 압축해 보여 준다. */
 export default function WeekStrip({ selectedDate, todayKey, currentSlots, onSelectDate }: Props) {
   const days = useMemo(() => weekOf(selectedDate), [selectedDate])
-  const docs = useDocs<DayData>(useMemo(() => days.map(dayDocKey), [days]))
+  const docs = useDaysSlots(days)
 
   const bars = useMemo(() => days.map((dk, i) => {
-    const slots = dk === selectedDate ? currentSlots : (docs[i]?.slots ?? {})
+    const slots = dk === selectedDate ? currentSlots : (docs[i] ?? {})
     return compressDayBar(slots)
   }), [days, docs, selectedDate, currentSlots])
 

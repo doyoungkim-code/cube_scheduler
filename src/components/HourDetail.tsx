@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react'
-import type { Activity, DayData, Routine, SlotRecord, TimeSlot } from '../types/schedule'
+import type { Activity, RoutineView, SlotRecord, TimeSlot } from '../types/schedule'
 import { ERASER_ACTIVITY } from '../types/schedule'
+import type { DayView } from '../hooks/useDayData'
 import { groupAllSlots, buildRoutineMap, fmtMin, type TaskGroup } from '../lib/slots'
 import SlotGroupCard from './SlotGroupCard'
 import SlotRecordModal from './SlotRecordModal'
 
 interface HourDetailProps {
   hour: number
-  day: DayData
+  day: DayView
   rawSlots: Record<number, TimeSlot>
-  routines: Routine[]
+  routines: RoutineView[]
   selectedActivity: Activity | null
   activities: Activity[]
-  onSlotChange: (min: number, slot: TimeSlot | null) => void
-  onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
+  onSlotChange: (min: number, activityId: string | null) => void
+  onSlotRangeChange: (startMin: number, endMin: number, activityId: string | null) => void
   onRecordChange: (startMin: number, endMin: number, record: SlotRecord) => void
   onClose: () => void
 }
@@ -33,7 +34,7 @@ function HourDetail({ hour, day, rawSlots, routines, selectedActivity, activitie
   const canAdd = !!selectedActivity && selectedActivity.id !== ERASER_ACTIVITY.id
   const handleEmptySlotClick = (slotMin: number) => {
     if (!canAdd || !selectedActivity) return
-    onSlotChange(slotMin, { label: selectedActivity.name, color: selectedActivity.color })
+    onSlotChange(slotMin, selectedActivity.id)
   }
 
   const hasEmpty = MINS.some(m => !day.slots[baseMin + m])

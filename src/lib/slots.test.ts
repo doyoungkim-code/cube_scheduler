@@ -4,7 +4,7 @@ import {
   dateKeyOf, parseDateKey, shiftDateKey, weekOf,
   groupAllSlots, buildRoutineMap, summarizeByActivity, compressDayBar,
 } from './slots'
-import type { DayData, Routine, TimeSlot } from '../types/schedule'
+import type { RoutineView, TimeSlot } from '../types/schedule'
 
 // ---------------------------------------------------------------- 포맷
 
@@ -87,16 +87,16 @@ describe('weekOf', () => {
 
 // ---------------------------------------------------------------- 그룹핑
 
-const A: TimeSlot = { label: '알고리즘', color: '#111' }
-const B: TimeSlot = { label: '운동', color: '#222' }
+const A: TimeSlot = { activityId: 'algo', label: '알고리즘', color: '#111' }
+const B: TimeSlot = { activityId: 'run', label: '운동', color: '#222' }
 
-function day(slots: Record<number, TimeSlot>): DayData {
+function day(slots: Record<number, TimeSlot>) {
   return { date: '2026-09-11', goal: '', slots }
 }
 
 describe('buildRoutineMap', () => {
   it('루틴 구간을 10분 키로 펼친다', () => {
-    const r: Routine = { id: 'r1', name: '수면', color: '#000', startMin: 0, endMin: 30 }
+    const r: RoutineView = { id: 'r1', activityId: 'sleep', name: '수면', color: '#000', startMin: 0, endMin: 30 }
     const map = buildRoutineMap([r])
     expect(Object.keys(map).map(Number).sort((a, b) => a - b)).toEqual([0, 10, 20])
     expect(map[0]).toBe(r)
@@ -119,14 +119,14 @@ describe('groupAllSlots', () => {
     expect(groups.map(g => g.label)).toEqual(['알고리즘', '운동', '알고리즘'])
   })
 
-  it('색이 다르면 같은 이름이어도 나눈다', () => {
-    const d = day({ 0: A, 10: { ...A, color: '#999' } })
+  it('활동 id 가 다르면 같은 이름이어도 나눈다', () => {
+    const d = day({ 0: A, 10: { ...A, activityId: 'algo2' } })
     expect(groupAllSlots(d, d.slots, {}, -1)).toHaveLength(2)
   })
 
   it('raw 에 없고 루틴 맵에 있는 슬롯은 isRoutine', () => {
-    const routine: Routine = { id: 'r', name: '수면', color: '#000', startMin: 0, endMin: 20 }
-    const routineSlot: TimeSlot = { label: '수면', color: '#000' }
+    const routine: RoutineView = { id: 'r', activityId: 'sleep', name: '수면', color: '#000', startMin: 0, endMin: 20 }
+    const routineSlot: TimeSlot = { activityId: 'sleep', label: '수면', color: '#000' }
     // day 는 루틴이 병합된 결과, raw 는 직접 칠한 것만
     const merged = day({ 0: routineSlot, 10: routineSlot, 20: A })
     const raw = { 20: A }
@@ -137,7 +137,7 @@ describe('groupAllSlots', () => {
   })
 
   it('직접 칠한 슬롯과 루틴 슬롯은 같은 이름이어도 분리', () => {
-    const routine: Routine = { id: 'r', name: '알고리즘', color: '#111', startMin: 0, endMin: 20 }
+    const routine: RoutineView = { id: 'r', activityId: 'algo', name: '알고리즘', color: '#111', startMin: 0, endMin: 20 }
     const merged = day({ 0: A, 10: A, 20: A })
     const raw = { 20: A }
     const groups = groupAllSlots(merged, raw, buildRoutineMap([routine]), -1)
@@ -151,16 +151,15 @@ describe('groupAllSlots', () => {
     expect(groups[1].containsNow).toBe(false)
   })
 
-  it('detail / ticketId / record 는 구간 내 첫 값을 쓴다', () => {
+  it('detail / record 는 구간 내 첫 값을 쓴다', () => {
     const rec = { title: 'T', description: 'D' }
     const d = day({
       0: A,
-      10: { ...A, detail: 'first', ticketId: 't1', record: rec },
-      20: { ...A, detail: 'second', ticketId: 't2' },
+      10: { ...A, detail: 'first', record: rec },
+      20: { ...A, detail: 'second' },
     })
     const [g] = groupAllSlots(d, d.slots, {}, -1)
     expect(g.detail).toBe('first')
-    expect(g.ticketId).toBe('t1')
     expect(g.record).toBe(rec)
   })
 

@@ -7,7 +7,7 @@
  */
 export interface TicketDrag {
   ticketId: string
-  activityName: string
+  activityId: string
 }
 
 let current: TicketDrag | null = null

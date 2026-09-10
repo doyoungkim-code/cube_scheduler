@@ -3,18 +3,18 @@ import ViewShell from '../components/ViewShell'
 import MiniRoutineTimeTable from '../components/MiniRoutineTimeTable'
 import RoutineAdherence from '../components/RoutineAdherence'
 import HabitChecklist from '../components/HabitChecklist'
-import { useActivities, useWeeklyRoutines } from '../hooks/useDayData'
+import { useVisibleActivities, useWeeklyRoutines } from '../hooks/useDayData'
 import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from '../types/schedule'
-import type { Activity, WeeklyRoutines, DayOfWeek, Routine } from '../types/schedule'
+import type { Activity, WeeklyRoutinesView, DayOfWeek, RoutineView } from '../types/schedule'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
 interface RoutineRowProps {
   title: string
   subtitle?: string
-  routines: Routine[]
+  routines: RoutineView[]
   selectedActivity: Activity | null
-  onChange: (r: Routine[]) => void
+  onChange: (r: RoutineView[]) => void
   actionLabel?: string
   onAction?: () => void
 }
@@ -44,7 +44,7 @@ const DAY_LABELS: { key: DayOfWeek; label: string }[] = [
 ]
 
 export default function HabitTrackerView() {
-  const [activities] = useActivities()
+  const [activities] = useVisibleActivities()
   const [weekly, setWeekly] = useWeeklyRoutines()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -54,7 +54,7 @@ export default function HabitTrackerView() {
     ? ERASER_ACTIVITY
     : activities.find(a => a.id === selectedId) ?? null
 
-  const updateDay = (key: keyof WeeklyRoutines, routines: Routine[]) => {
+  const updateDay = (key: keyof WeeklyRoutinesView, routines: RoutineView[]) => {
     setWeekly({ ...weekly, [key]: routines })
   }
 

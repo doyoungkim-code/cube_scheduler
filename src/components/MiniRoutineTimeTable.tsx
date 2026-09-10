@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import type { Activity, Routine } from '../types/schedule'
+import type { Activity, RoutineView } from '../types/schedule'
 import { ERASER_ACTIVITY } from '../types/schedule'
-import { TOTAL_MIN } from '../lib/slots'
+import { TOTAL_MIN, buildRoutineMap } from '../lib/slots'
 
 interface Props {
-  routines: Routine[]
+  routines: RoutineView[]
   selectedActivity: Activity | null
-  onChange: (routines: Routine[]) => void
+  onChange: (routines: RoutineView[]) => void
 }
 
 const SLOT_COUNT = 144
@@ -41,7 +41,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
         const start = Math.min(paintDrag.startMin, paintDrag.currentMin)
         const end = Math.max(paintDrag.startMin, paintDrag.currentMin) + 10
 
-        const updated: Routine[] = []
+        const updated: RoutineView[] = []
         for (const r of routines) {
           if (r.endMin <= start || r.startMin >= end) {
             updated.push(r)
@@ -57,6 +57,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
         if (selectedActivity.id !== ERASER_ACTIVITY.id) {
           updated.push({
             id: uuidv4(),
+            activityId: selectedActivity.id,
             name: selectedActivity.name,
             color: selectedActivity.color,
             startMin: start,
@@ -78,12 +79,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
   }, [paintDrag, selectedActivity, routines, onChange, minFromMouse])
 
   // 슬롯별 루틴 매핑
-  const slotMap: Record<number, Routine> = {}
-  for (const r of routines) {
-    for (let m = r.startMin; m < r.endMin; m += 10) {
-      slotMap[m] = r
-    }
-  }
+  const slotMap = buildRoutineMap(routines)
 
   const dragStart = paintDrag ? Math.min(paintDrag.startMin, paintDrag.currentMin) : -1
   const dragEnd = paintDrag ? Math.max(paintDrag.startMin, paintDrag.currentMin) + 10 : -1

@@ -28,11 +28,12 @@ export interface StorageBackend {
   dispose(): Promise<void>
 }
 
-/** day-* 키 중 실제 슬롯 데이터가 있는 것만 남김 (Electron Store.listKeys 와 동일한 동작) */
+/** day-* 키 중 실제 기록이 있는 것만 남김. v2(segments) 와 v1(slots) 모두 인식. */
 export function hasSlots(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false
-  const slots = (data as { slots?: Record<string, unknown> }).slots
-  return !!slots && Object.keys(slots).length > 0
+  const d = data as { segments?: unknown[]; slots?: Record<string, unknown> }
+  if (Array.isArray(d.segments)) return d.segments.length > 0
+  return !!d.slots && Object.keys(d.slots).length > 0
 }
 
 class ListenerSet {

@@ -1,9 +1,8 @@
 import { useState, useMemo, useRef } from 'react'
 import ViewShell from '../components/ViewShell'
-import { useDayData, todayKey, dayDocKey } from '../hooks/useDayData'
-import { useDocs } from '../store'
+import { useDayData, todayKey, useDaysSlots, type DayView } from '../hooks/useDayData'
 import { weekOf, fmtDuration, fmtMin } from '../lib/slots'
-import type { DayData, TimeSlot } from '../types/schedule'
+import type { TimeSlot } from '../types/schedule'
 
 const DAY_NAMES_FULL = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
 const DAY_NAMES_SHORT = ['월', '화', '수', '목', '금', '토', '일']
@@ -135,7 +134,7 @@ function buildStatsHtml(stats: { title: string; color: string; minutes: number }
   return html
 }
 
-function buildDayHtml(day: DayData, rawSlots: Record<number, TimeSlot>): string {
+function buildDayHtml(day: DayView, rawSlots: Record<number, TimeSlot>): string {
   const d = new Date(day.date + 'T00:00:00')
   const dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${DAY_NAMES_FULL[d.getDay()]}`
   const groups = groupSlotRecords(rawSlots)
@@ -280,7 +279,7 @@ function TimelineBar({ slots, small }: { slots: Record<number, TimeSlot>; small?
   )
 }
 
-function DayReportCard({ day, rawSlots }: { day: DayData; rawSlots: Record<number, TimeSlot> }) {
+function DayReportCard({ day, rawSlots }: { day: DayView; rawSlots: Record<number, TimeSlot> }) {
   const d = new Date(day.date + 'T00:00:00')
   const dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${DAY_NAMES_FULL[d.getDay()]}`
   const groups = groupSlotRecords(rawSlots)
@@ -378,12 +377,12 @@ export default function PatternAnalysisView() {
 
   // 주간: 월~일 7일 문서를 스토어에서 (저장·다른 기기 변경 즉시 반영)
   const weekKeys = useMemo(() => weekOf(selectedDate), [selectedDate])
-  const weekDocs = useDocs<DayData>(useMemo(() => weekKeys.map(dayDocKey), [weekKeys]))
+  const weekDocs = useDaysSlots(weekKeys)
   const weekData = useMemo(() => weekKeys.map((dk, i) => {
-    const saved = weekDocs[i]
-    if (saved?.slots) {
-      const groups = groupSlotRecords(saved.slots)
-      return { date: dk, stats: groups, total: groups.reduce((s, g) => s + g.minutes, 0), slots: saved.slots }
+    const slots = weekDocs[i]
+    if (slots && Object.keys(slots).length > 0) {
+      const groups = groupSlotRecords(slots)
+      return { date: dk, stats: groups, total: groups.reduce((s, g) => s + g.minutes, 0), slots }
     }
     return { date: dk, stats: [], total: 0, slots: {} as Record<number, TimeSlot> }
   }), [weekKeys, weekDocs])

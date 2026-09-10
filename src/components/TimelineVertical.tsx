@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import type { Activity, DayData, Routine, SlotRecord, TimeSlot } from '../types/schedule'
+import type { Activity, RoutineView, SlotRecord, TimeSlot } from '../types/schedule'
 import { ERASER_ACTIVITY } from '../types/schedule'
+import type { DayView } from '../hooks/useDayData'
 import SlotRecordModal from './SlotRecordModal'
 import { TOTAL_MIN, fmtMin, fmtDuration, groupAllSlots, buildRoutineMap, type TaskGroup } from '../lib/slots'
 import { useNowMinute } from '../hooks/useNow'
@@ -10,12 +11,12 @@ const TRACK_H = (TOTAL_MIN / 10) * PX_PER_10MIN
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 
 interface Props {
-  day: DayData
+  day: DayView
   rawSlots: Record<number, TimeSlot>
-  routines: Routine[]
+  routines: RoutineView[]
   selectedActivity: Activity | null
   activities: Activity[]
-  onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
+  onSlotRangeChange: (startMin: number, endMin: number, activityId: string | null) => void
   onRecordChange: (startMin: number, endMin: number, record: SlotRecord) => void
   onDeselectActivity?: () => void
 }
@@ -86,7 +87,7 @@ export default function TimelineVertical({
         const start = Math.min(paintDrag.startMin, paintDrag.currentMin)
         const end = Math.max(paintDrag.startMin, paintDrag.currentMin) + 10
         if (selectedActivity.id === ERASER_ACTIVITY.id) onSlotRangeChange(start, end, null)
-        else onSlotRangeChange(start, end, { label: selectedActivity.name, color: selectedActivity.color })
+        else onSlotRangeChange(start, end, selectedActivity.id)
         onDeselectActivity?.()
       }
       setPaintDrag(null)

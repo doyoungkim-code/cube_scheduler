@@ -1,7 +1,7 @@
 /**
  * 슬롯 / 날짜 공용 헬퍼. TimeTable, TimelineVertical, 위젯들이 함께 사용한다.
  */
-import type { DayData, Routine, TimeSlot, SlotRecord } from '../types/schedule'
+import type { RoutineView, TimeSlot, SlotRecord } from '../types/schedule'
 
 export const TOTAL_MIN = 1440
 
@@ -56,10 +56,10 @@ export function weekOf(key: string): string[] {
 // ---------------------------------------------------------------- 그룹핑
 
 export interface TaskGroup {
+  activityId: string
   label: string
   color: string
   detail: string
-  ticketId: string | undefined
   record: SlotRecord | undefined
   startMin: number
   endMin: number
@@ -69,9 +69,9 @@ export interface TaskGroup {
 
 /** 연속된 같은 활동 슬롯을 구간으로 묶는다 (루틴 전용 구간은 isRoutine) */
 export function groupAllSlots(
-  day: DayData,
+  day: { slots: Record<number, TimeSlot> },
   rawSlots: Record<number, TimeSlot>,
-  routineMap: Record<number, Routine>,
+  routineMap: Record<number, RoutineView>,
   nowSlotMin: number,
 ): TaskGroup[] {
   const groups: TaskGroup[] = []
@@ -86,19 +86,18 @@ export function groupAllSlots(
     const raw = rawSlots[m]
     const isRoutine = !raw && !!routineMap[m]
 
-    if (current && current.label === slot.label && current.color === slot.color && current.isRoutine === isRoutine) {
+    if (current && current.activityId === slot.activityId && current.color === slot.color && current.isRoutine === isRoutine) {
       current.endMin = m + 10
       if (m === nowSlotMin) current.containsNow = true
       if (slot.detail && !current.detail) current.detail = slot.detail
-      if (slot.ticketId && !current.ticketId) current.ticketId = slot.ticketId
       if (slot.record && !current.record) current.record = slot.record
     } else {
       if (current) groups.push(current)
       current = {
+        activityId: slot.activityId,
         label: slot.label,
         color: slot.color,
         detail: slot.detail ?? '',
-        ticketId: slot.ticketId,
         record: slot.record,
         startMin: m,
         endMin: m + 10,
@@ -111,8 +110,8 @@ export function groupAllSlots(
   return groups
 }
 
-export function buildRoutineMap(routines: Routine[]): Record<number, Routine> {
-  const map: Record<number, Routine> = {}
+export function buildRoutineMap(routines: readonly RoutineView[]): Record<number, RoutineView> {
+  const map: Record<number, RoutineView> = {}
   for (const r of routines) {
     for (let m = r.startMin; m < r.endMin; m += 10) map[m] = r
   }
