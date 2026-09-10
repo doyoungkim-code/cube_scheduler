@@ -1,10 +1,12 @@
 import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
 
-// lib/ 순수 함수 테스트가 대상이라 DOM 환경은 두지 않는다.
-// 컴포넌트 테스트가 필요해지면 environment 를 'jsdom' 으로 바꾸고 jsdom 을 추가한다.
+// 기본은 node (lib/store 순수 함수). 렌더 스모크 테스트만 파일 상단 주석으로 jsdom 을 켠다.
 export default defineConfig({
+  plugins: [react()],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    css: false,
   },
 })

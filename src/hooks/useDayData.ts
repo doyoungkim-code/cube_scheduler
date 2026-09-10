@@ -9,7 +9,7 @@ import {
   paintRange, resolveWeekly, toStoredWeekly, type ActivityResolver,
 } from '../lib/day'
 import { useDoc, useDocs, useDocStore, writeDoc, undoLast } from '../store'
-import { ensureMigrated } from '../store/migrations'
+import { ensureMigrated, migrateDayDocNow } from '../store/migrations'
 
 export function todayKey(): string {
   return dateKeyOf(new Date())
@@ -120,10 +120,11 @@ export function useDayData(dateKey: string) {
   const dayRoutines = useMemo(() => getDayRoutines(weekly, dateKey), [weekly, dateKey])
   const day = useMemo<DayView>(() => ({ ...rawDay, slots: overlayRoutines(rawSlots, dayRoutines) }), [rawDay, rawSlots, dayRoutines])
 
-  /** 쓰기 직전의 최신 v2 문서 (v1 이 남아 있으면 빈 하루로 취급 — 마이그레이션이 곧 덮는다) */
+  /** 쓰기 직전의 최신 v2 문서. 아직 v1 이면 그 자리에서 변환해 기존 기록을 잃지 않는다. */
   const current = useCallback((): DayData => {
     const doc = useDocStore.getState().docs[key]
-    return isDayV2(doc) ? doc : makeEmptyDay(dateKey)
+    if (isDayV2(doc)) return doc
+    return migrateDayDocNow(doc, dateKey) ?? makeEmptyDay(dateKey)
   }, [key, dateKey])
 
   const setGoal = useCallback((g: string) => {

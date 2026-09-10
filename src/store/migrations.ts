@@ -9,7 +9,7 @@
  * 순차 실행이라 같은 이름이 두 번 만들어지지 않는다.
  */
 import { v4 as uuidv4 } from 'uuid'
-import type { Activity, LegacyRoutine, WeeklyRoutines } from '../types/schedule'
+import type { Activity, DayData, LegacyRoutine, WeeklyRoutines } from '../types/schedule'
 import { SLEEP_ACTIVITY, WEEKLY_KEYS } from '../types/schedule'
 import { isLegacyDay, migrateLegacyDay, migrateWeekly, weeklyNeedsMigration, type ActivityIdByName } from '../lib/day'
 import { storage } from '../lib/storage'
@@ -60,6 +60,15 @@ async function migrateRoutines(): Promise<boolean> {
   if (!weeklyNeedsMigration(weekly)) return false
   useDocStore.getState().write('routines-weekly', migrateWeekly(weekly, idByName))
   return true
+}
+
+/**
+ * 쓰기 직전에 v1 문서를 만나면 그 자리에서 v2 로 바꿔 돌려준다 (일괄 변환이 아직 안 돌았을 때의 안전장치).
+ * v2 거나 없으면 null.
+ */
+export function migrateDayDocNow(doc: unknown, dateKey: string): DayData | null {
+  if (!isLegacyDay(doc)) return null
+  return migrateLegacyDay({ ...doc, date: doc.date || dateKey }, idByName)
 }
 
 /** 가져오기 등으로 v1 문서가 새로 들어왔을 때: 다음 ensureMigrated 에서 다시 돌게 한다 */
