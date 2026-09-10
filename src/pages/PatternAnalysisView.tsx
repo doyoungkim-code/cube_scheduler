@@ -462,7 +462,7 @@ export default function PatternAnalysisView() {
           <div className="modal tutorial-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2>블로그에 붙여넣기</h2>
-              <button className="slot-editor-close" onClick={() => setShowTutorial(false)}>&times;</button>
+              <button className="slot-editor-close" onClick={() => setShowTutorial(false)} aria-label="닫기">&times;</button>
             </div>
             <div className="modal-body">
               <div className="tutorial-steps">

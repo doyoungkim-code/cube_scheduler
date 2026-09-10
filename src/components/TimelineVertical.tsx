@@ -182,7 +182,7 @@ export default function TimelineVertical({
               style={{
                 top: (dragStart / 10) * PX_PER_10MIN,
                 height: ((dragEnd - dragStart) / 10) * PX_PER_10MIN,
-                background: selectedActivity?.id === ERASER_ACTIVITY.id ? '#ff3b30' : selectedActivity?.color,
+                background: selectedActivity?.id === ERASER_ACTIVITY.id ? ERASER_ACTIVITY.color : selectedActivity?.color,
               }}
             />
           )}

@@ -74,9 +74,10 @@ export default function HabitTrackerView() {
         {/* 활동 팔레트 (공유) */}
         <div className="habit-palette">
           <button
-            className={`palette-chip palette-chip--sleep ${selectedId === '__sleep__' ? 'palette-chip--selected' : ''}`}
+            className={`palette-chip palette-chip--sleep ${selectedId === SLEEP_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
             style={{ backgroundColor: SLEEP_ACTIVITY.color }}
-            onClick={() => setSelectedId(selectedId === '__sleep__' ? null : '__sleep__')}
+            aria-pressed={selectedId === SLEEP_ACTIVITY.id}
+            onClick={() => setSelectedId(selectedId === SLEEP_ACTIVITY.id ? null : SLEEP_ACTIVITY.id)}
           >
             {SLEEP_ACTIVITY.name}
           </button>
@@ -92,8 +93,10 @@ export default function HabitTrackerView() {
           ))}
           <div className="palette-spacer" />
           <button
-            className={`palette-chip palette-chip--eraser ${selectedId === 'eraser' ? 'palette-chip--selected' : ''}`}
-            onClick={() => setSelectedId(selectedId === 'eraser' ? null : 'eraser')}
+            className={`palette-chip palette-chip--eraser ${selectedId === ERASER_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
+            onClick={() => setSelectedId(selectedId === ERASER_ACTIVITY.id ? null : ERASER_ACTIVITY.id)}
+            aria-pressed={selectedId === ERASER_ACTIVITY.id}
+            aria-label="지우개"
           >
             ✕
           </button>

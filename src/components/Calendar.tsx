@@ -68,9 +68,9 @@ function Calendar({ selectedDate, onSelectDate, todayKey }: CalendarProps) {
   return (
     <div className="calendar">
       <div className="cal-header">
-        <button className="cal-nav" onClick={prevMonth}>&lsaquo;</button>
+        <button className="cal-nav" onClick={prevMonth} aria-label="이전 달">&lsaquo;</button>
         <span className="cal-title">{navYear}년 {navMonth + 1}월</span>
-        <button className="cal-nav" onClick={nextMonth}>&rsaquo;</button>
+        <button className="cal-nav" onClick={nextMonth} aria-label="다음 달">&rsaquo;</button>
       </div>
       <div className="cal-days">
         {DAY_NAMES.map((d, i) => (

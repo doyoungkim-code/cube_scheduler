@@ -100,7 +100,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
           let blockStyle: React.CSSProperties | undefined
           if (inDragRange && selectedActivity) {
             if (selectedActivity.id === ERASER_ACTIVITY.id) {
-              blockStyle = { backgroundColor: '#ff3b30', opacity: 0.4 }
+              blockStyle = { backgroundColor: ERASER_ACTIVITY.color, opacity: 0.4 }
             } else {
               blockStyle = { backgroundColor: selectedActivity.color, opacity: 0.75 }
             }

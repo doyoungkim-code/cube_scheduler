@@ -241,7 +241,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
             if (isTicketDropTarget && slotMatchesTicket) {
               blockStyle = { backgroundColor: '#1a73e8', opacity: 0.6 }
             } else if (isTicketDropTarget && !slotMatchesTicket) {
-              blockStyle = rawSlot ? { backgroundColor: rawSlot.color, opacity: 0.3 } : { backgroundColor: '#ff3b30', opacity: 0.2 }
+              blockStyle = rawSlot ? { backgroundColor: rawSlot.color, opacity: 0.3 } : { backgroundColor: ERASER_ACTIVITY.color, opacity: 0.2 }
             } else if (isDraggingTicket && slotMatchesTicket) {
               // 같은 활동 슬롯 전체를 살짝 강조
               blockStyle = { backgroundColor: slot!.color, boxShadow: 'inset 0 0 0 1px rgba(26,115,232,0.4)' }
@@ -249,7 +249,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
               blockStyle = { backgroundColor: shiftExtend.color, opacity: 0.75 }
             } else if (inDragRange && selectedActivity) {
               if (selectedActivity.id === ERASER_ACTIVITY.id) {
-                blockStyle = { backgroundColor: '#ff3b30', opacity: 0.4 }
+                blockStyle = { backgroundColor: ERASER_ACTIVITY.color, opacity: 0.4 }
               } else {
                 blockStyle = { backgroundColor: selectedActivity.color, opacity: 0.75 }
               }
@@ -301,7 +301,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
               let blockStyle: React.CSSProperties | undefined
               if (inDragRange && selectedActivity) {
                 if (selectedActivity.id === ERASER_ACTIVITY.id) {
-                  blockStyle = { backgroundColor: '#ff3b30', opacity: 0.5 }
+                  blockStyle = { backgroundColor: ERASER_ACTIVITY.color, opacity: 0.5 }
                 } else {
                   blockStyle = { backgroundColor: selectedActivity.color, opacity: 0.8 }
                 }

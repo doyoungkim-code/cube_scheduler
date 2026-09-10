@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Activity } from '../types/schedule'
-import { SLEEP_ACTIVITY } from '../types/schedule'
+import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from '../types/schedule'
 
 const PALETTE_COLORS = [
   '#4a9eff', '#34c759', '#ff9500', '#ff3b30',
@@ -71,9 +71,10 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
       <div className="palette-chips">
         {/* 수면 */}
         <button
-          className={`palette-chip palette-chip--sleep ${selectedId === '__sleep__' ? 'palette-chip--selected' : ''}`}
+          className={`palette-chip palette-chip--sleep ${selectedId === SLEEP_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
           style={{ backgroundColor: SLEEP_ACTIVITY.color }}
-          onClick={() => onSelect(selectedId === '__sleep__' ? null : '__sleep__')}
+          aria-pressed={selectedId === SLEEP_ACTIVITY.id}
+          onClick={() => onSelect(selectedId === SLEEP_ACTIVITY.id ? null : SLEEP_ACTIVITY.id)}
           title="수면: 드래그로 수면 시간 칠하기"
         >
           {SLEEP_ACTIVITY.name}
@@ -118,6 +119,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
               key={a.id}
               className={`palette-chip ${selectedId === a.id ? 'palette-chip--selected' : ''}`}
               style={{ backgroundColor: a.color }}
+              aria-pressed={selectedId === a.id}
               onClick={() => onSelect(selectedId === a.id ? null : a.id)}
               onContextMenu={e => handleContextMenu(e, a)}
               title={`${a.name} (우클릭: 편집)`}
@@ -157,7 +159,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
             </div>
           </div>
         ) : (
-          <button className="palette-chip palette-chip--add" onClick={() => setAdding(true)}>
+          <button className="palette-chip palette-chip--add" onClick={() => setAdding(true)} aria-label="활동 추가" title="활동 추가">
             +
           </button>
         )}
@@ -165,8 +167,10 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
         {/* 지우개 — 오른쪽 끝 */}
         <div className="palette-spacer" />
         <button
-          className={`palette-chip palette-chip--eraser ${selectedId === 'eraser' ? 'palette-chip--selected' : ''}`}
-          onClick={() => onSelect(selectedId === 'eraser' ? null : 'eraser')}
+          className={`palette-chip palette-chip--eraser ${selectedId === ERASER_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
+          onClick={() => onSelect(selectedId === ERASER_ACTIVITY.id ? null : ERASER_ACTIVITY.id)}
+          aria-pressed={selectedId === ERASER_ACTIVITY.id}
+          aria-label="지우개"
           title="지우개: 선택 후 타임테이블 드래그로 삭제"
         >
           ✕
@@ -175,9 +179,9 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
 
       {selectedId && (
         <div className="palette-hint">
-          {selectedId === 'eraser'
+          {selectedId === ERASER_ACTIVITY.id
             ? '지우개 모드: 타임테이블을 드래그하여 삭제'
-            : selectedId === '__sleep__'
+            : selectedId === SLEEP_ACTIVITY.id
             ? '"수면" 선택됨 — 타임테이블을 드래그하여 채우기'
             : `"${activities.find(a => a.id === selectedId)?.name}" 선택됨 — 타임테이블을 드래그하여 채우기`
           }

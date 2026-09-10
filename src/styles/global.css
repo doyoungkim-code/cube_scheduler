@@ -19,7 +19,8 @@
   --accent: #e8a87c;
   --accent-strong: #f0b98f;
   --accent-light: rgba(232, 168, 124, 0.15);
-  --danger: #ff6b5e;
+  --danger: #ff3b30;        /* 삭제·지우개·오류. 실제 쓰이던 값으로 통일 */
+  --danger-light: rgba(255, 59, 48, 0.12);
   --border: #6e5955;
   --border-soft: rgba(255, 255, 255, 0.06);
   --shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -61,6 +62,23 @@ button:focus:not(:focus-visible) { outline: none; }
 
 /* 드래그 페인트 영역만 선택 방지 (본문 텍스트는 선택 가능) */
 .tt-track, .tt-zoom, .palette, .mini-rt-track, .habit-palette, .calendar, .cinema-ticket { user-select: none; -webkit-user-select: none; }
+
+/* ===== 흰 카드(라이트 표면) =====
+   어두운 셸 안에서 흰 배경으로 뜨는 영역. 토큰을 로컬로 덮어써서 안의 컴포넌트가 라이트 팔레트를 쓰게 한다.
+   새 흰 카드를 만들 때는 이 목록에 셀렉터만 추가한다. */
+.timetable, .modal, .kanban, .vtl {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-hover: #eeeeee;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --accent: #1a73e8;
+  --accent-strong: #1765c9;
+  --accent-light: #e8f0fe;
+  --border: #e0e0e0;
+  color: var(--text-primary);
+}
 
 /* ===== App Shell ===== */
 .app {
@@ -321,7 +339,7 @@ button:focus:not(:focus-visible) { outline: none; }
   background: var(--bg-primary) !important; color: var(--text-primary);
   border: 1.5px solid var(--border); font-size: 14px; padding: 4px 12px;
 }
-.palette-chip--eraser.palette-chip--selected { border-color: #ff3b30; color: #ff3b30; }
+.palette-chip--eraser.palette-chip--selected { border-color: var(--danger); color: var(--danger); }
 .palette-chip--add {
   background: var(--bg-primary) !important; color: var(--text-muted);
   border: 2px dashed var(--border); font-size: 16px; padding: 3px 14px;
@@ -361,16 +379,6 @@ button:focus:not(:focus-visible) { outline: none; }
   background: #ffffff; border-radius: var(--radius);
   padding: 14px 16px;
   box-shadow: var(--shadow);
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --bg-hover: #eeeeee;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --accent: #1a73e8;
-  --accent-light: #e8f0fe;
-  --border: #e0e0e0;
-  color: var(--text-primary);
 }
 .timetable-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
 .timetable-now-wrap { display: flex; align-items: center; gap: 8px; }
@@ -384,7 +392,7 @@ button:focus:not(:focus-visible) { outline: none; }
   font-size: 11px; font-weight: 600; padding: 2px 10px;
   border-radius: 10px; color: #fff;
 }
-.timetable-now { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #ff3b30; }
+.timetable-now { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--danger); }
 
 /* 시간 라벨 (24개, 매 정시) */
 .tt-hour-labels { display: flex; }
@@ -438,12 +446,12 @@ button:focus:not(:focus-visible) { outline: none; }
 /* 현재 시각 표시선 */
 .tt-now-line {
   position: absolute; top: -4px; bottom: -2px; width: 2px;
-  background: #ff3b30; z-index: 12; pointer-events: none;
+  background: var(--danger); z-index: 12; pointer-events: none;
   transform: translateX(-1px);
 }
 .tt-now-dot {
   position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
-  width: 6px; height: 6px; border-radius: 50%; background: #ff3b30;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--danger);
 }
 
 /* ===== 줌 뷰 (돋보기) ===== */
@@ -557,7 +565,7 @@ button:focus:not(:focus-visible) { outline: none; }
   color: var(--text-muted); cursor: pointer; padding: 3px 6px;
   border-radius: 3px; line-height: 1;
 }
-.tt-ticket-delete:hover { background: #ff3b30; color: #fff; }
+.tt-ticket-delete:hover { background: var(--danger); color: #fff; }
 .tt-ticket-title {
   font-size: 13px; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -609,8 +617,8 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .btn-save { background: var(--accent); color: #fff; border: none; }
 .btn-save:hover { opacity: 0.9; }
-.btn-delete { background: #fff; color: #ff3b30; border: 1px solid #ff3b30; }
-.btn-delete:hover { background: #ff3b30; color: #fff; }
+.btn-delete { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+.btn-delete:hover { background: var(--danger); color: #fff; }
 .btn-cancel { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
 .btn-cancel:hover { border-color: var(--text-secondary); }
 
@@ -637,16 +645,6 @@ button:focus:not(:focus-visible) { outline: none; }
   background: #ffffff; border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg); width: 500px; max-width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto;
   animation: zoom-in 0.12s ease-out;
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --bg-hover: #eeeeee;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --accent: #1a73e8;
-  --accent-light: #e8f0fe;
-  --border: #e0e0e0;
-  color: var(--text-primary);
 }
 .modal--wide { width: 90vw; max-width: 900px; }
 .modal-header {
@@ -702,7 +700,7 @@ button:focus:not(:focus-visible) { outline: none; }
   background: var(--accent) !important; color: #fff !important;
   font-weight: 700;
 }
-.cal-sun { color: #ff3b30; }
+.cal-sun { color: var(--danger); }
 .cal-sat { color: #4a9eff; }
 .cal-cell--selected.cal-sun,
 .cal-cell--selected.cal-sat { color: #fff !important; }
@@ -720,16 +718,6 @@ button:focus:not(:focus-visible) { outline: none; }
   background: #ffffff; border-radius: var(--radius);
   padding: 14px 16px;
   box-shadow: var(--shadow);
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --bg-hover: #eeeeee;
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --text-muted: #999999;
-  --accent: #1a73e8;
-  --accent-light: #e8f0fe;
-  --border: #e0e0e0;
-  color: var(--text-primary);
 }
 .kanban-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1037,8 +1025,8 @@ button:focus:not(:focus-visible) { outline: none; }
   outline: none; font-family: var(--font);
 }
 .ticket-field-input:focus { border-color: var(--accent); }
-.ticket-field-input--error, .ticket-field-input--error:focus { border-color: #ff3b30; }
-.ticket-field-error { font-size: 11px; color: #ff3b30; margin-top: 2px; }
+.ticket-field-input--error, .ticket-field-input--error:focus { border-color: var(--danger); }
+.ticket-field-error { font-size: 11px; color: var(--danger); margin-top: 2px; }
 .ticket-field-select {
   font-size: 14px; padding: 9px 12px;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -1423,7 +1411,7 @@ button:focus:not(:focus-visible) { outline: none; }
   background: none; border: none; color: var(--text-muted);
   cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px;
 }
-.habits-delete:hover { color: #ff3b30; background: rgba(255,59,48,0.1); }
+.habits-delete:hover { color: var(--danger); background: rgba(255,59,48,0.1); }
 .habits-add-btn {
   margin-top: 8px; width: 100%;
   font-size: 12px; font-weight: 600; padding: 9px;
@@ -1672,10 +1660,6 @@ button:focus:not(:focus-visible) { outline: none; }
   position: relative;
   background: #fff; border-radius: var(--radius); padding: 12px 12px 14px;
   box-shadow: var(--shadow);
-  --bg-primary: #ffffff; --bg-secondary: #f5f5f5; --bg-hover: #eeeeee;
-  --text-primary: #1a1a1a; --text-secondary: #666666; --text-muted: #999999;
-  --accent: #1a73e8; --accent-light: #e8f0fe; --border: #e0e0e0;
-  color: var(--text-primary);
   user-select: none; -webkit-user-select: none;
 }
 .vtl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -1710,17 +1694,17 @@ button:focus:not(:focus-visible) { outline: none; }
   opacity: 0.5; cursor: default;
   background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.3) 3px, rgba(255,255,255,0.3) 6px);
 }
-.vtl-seg--now { box-shadow: 0 0 0 2px #ff3b30; }
+.vtl-seg--now { box-shadow: 0 0 0 2px var(--danger); }
 .vtl-seg-text { display: flex; flex-direction: column; gap: 1px; padding: 5px 9px; line-height: 1.25; }
 .vtl-seg-label { font-size: 12px; font-weight: 700; text-shadow: 0 1px 1px rgba(0,0,0,0.15); }
 .vtl-seg-title { font-size: 12px; font-weight: 500; opacity: 0.95; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vtl-seg-time { font-size: 10px; font-family: var(--mono); opacity: 0.85; }
 .vtl-drag { position: absolute; left: 3px; right: 3px; border-radius: 5px; opacity: 0.7; pointer-events: none; z-index: 3; }
-.vtl-now { position: absolute; left: 0; right: 0; height: 2px; background: #ff3b30; z-index: 4; pointer-events: none; }
-.vtl-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #ff3b30; }
+.vtl-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger); z-index: 4; pointer-events: none; }
+.vtl-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
 .vtl-now-label {
   position: absolute; right: 4px; top: -18px;
-  font-family: var(--mono); font-size: 10px; font-weight: 700; color: #ff3b30;
+  font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--danger);
   background: rgba(255,255,255,0.9); padding: 1px 5px; border-radius: 4px;
 }
 .vtl-fab {
