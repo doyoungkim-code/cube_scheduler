@@ -66,7 +66,7 @@ describe('앱 스모크', () => {
     setStorageBackend(backend)
     useDocStore.getState().reset()
 
-    const errors: unknown[] = []
+    const errors: unknown[][] = []
     const origError = console.error
     console.error = (...args: unknown[]) => { errors.push(args); origError(...args) }
 
