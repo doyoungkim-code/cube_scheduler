@@ -1,35 +1,39 @@
-# Scheduler
+# Cube Scheduler
 
-웹 기반 개인 일정 관리 앱. 24시간 타임테이블(144개 10분 블록)에 활동을 드래그로 칠하여 하루 일과를 기록하고, Jira 스타일 칸반보드로 업무를 관리한다.
+하루를 10분 단위로 칠해서 기록하는 개인 스케줄러. 24시간 타임테이블에 활동을 드래그로 칠하고, 기차표 모양의 칸반 티켓으로 할 일을 관리하고, 요일별 루틴과 습관을 추적한다.
 
-- **배포**: GitHub Pages → https://doyoungkim-code.github.io/cube_scheduler/
-- **데이터**: Firebase(Google 로그인 + Firestore)에 저장되어 어느 기기에서든 같은 데이터를 본다.
-- **접근 제한**: 승인제. Google 계정으로 로그인하면 관리자가 승인해야 사용할 수 있고, 각자 자기 데이터만 본다.
+- **사이트**: https://doyoungkim-code.github.io/cube_scheduler/
+- **동기화**: Google 계정으로 로그인하면 어느 기기에서든 같은 데이터를 본다 (Firebase Firestore).
+- **접근 제한**: 승인제. 로그인한 사용자는 관리자가 승인해야 쓸 수 있고, 각자 자기 데이터만 본다.
+- **지원 환경**: 데스크톱·태블릿·모바일 브라우저. 타임테이블은 터치 드래그로도 칠할 수 있다.
 
-## UI 구조
-<img width="2419" height="1561" alt="스크린샷 2026-04-04 225740" src="https://github.com/user-attachments/assets/111e0a02-d642-498f-818d-cebf9149f210" />
+## 주요 기능
 
-### 레이아웃
-- **상단 헤더**: 로고, 페이지 탭(스케줄 / 대시보드 / 습관 / 메모 / 설정), 시계, 계정
-- **스케줄 페이지 (데스크톱)**: 왼쪽 방 카드(현재 활동에 따라 픽셀아트 전환 + 시계) / 오른쪽 날짜 바, 팔레트, 타임테이블, 칸반
-- **모바일 (≤720px)**: 한 열 배치, 하단 탭바, 타임테이블·칸반은 가로 스크롤, 모달은 바텀 시트. 타임테이블 칠하기는 터치 드래그 지원.
+### 스케줄
+- **타임테이블**: 144개(10분 단위) 블록. 팔레트에서 활동을 고르고 드래그하면 그 구간이 칠해진다. 드래그 중 3시간 확대 뷰가 떠서 정확히 조절할 수 있다.
+- **현재 시간대 / 시간 상세**: 지금 시각이 속한 시간대의 기록을 카드로 보여 준다. 블록을 클릭하면 그 시간의 상세 패널이 열리고, 카드를 누르면 제목·내용·활동별 세부 항목(운동 종류/거리/시간, 알고리즘 문제번호/풀이시간/링크)을 적을 수 있다.
+- **활동 팔레트**: 활동 이름과 색을 자유롭게 추가·편집. 현재 활동에 따라 왼쪽 방 이미지가 바뀐다 (알고리즘, 프로젝트, 운동, 식사, 영어 공부, 수면 등).
+- **날짜 이동**: 화살표로 하루씩, 달력으로 원하는 날짜로. 기록이 있는 날은 달력에 점이 찍힌다.
+- **실행 취소**: Ctrl+Z (최근 20단계).
 
-### 페이지 탭
-- 📊 **대시보드** — 하루/주간 활동 리포트, HTML 내보내기
-- ✅ **습관 트래커** — (예정)
-- 📝 **퀵 메모** — (예정)
-- ⚙️ **환경설정** — 계정/로그아웃, 사용자 승인(관리자), 백업 내보내기/가져오기
+### 칸반 보드
+- To Do / Progress / Done 세 컬럼. 티켓에는 제목, 상세, 왜 하는지(Why), 활동 유형, 활동별 세부 항목이 들어간다.
+- 데스크톱에서는 드래그앤드롭으로 컬럼 간 이동. Progress 티켓은 오른쪽 스텁을 옆으로 당기면 찢어지면서 Done으로 넘어간다.
+- Progress 티켓을 타임테이블의 같은 활동 구간 위에 놓으면 그 구간에 티켓 내용이 기록으로 연결된다.
 
-## 기술 스택
+### 대시보드
+- 하루 일과 / 주간 현황 리포트. 타임라인 바, 활동별 합계, 기록 목록.
+- **클립보드 복사**: 인라인 스타일이 포함된 HTML로 복사되어 Tistory, Notion, Velog 등의 HTML 편집기에 그대로 붙여넣을 수 있다.
 
-| 영역 | 기술 |
-|------|------|
-| 프론트엔드 | React 19 + TypeScript 5 |
-| 빌드 | Vite 6 |
-| 호스팅 | GitHub Pages (GitHub Actions 로 자동 배포) |
-| 인증 | Firebase Authentication (Google 로그인) |
-| 데이터 저장 | Cloud Firestore (`users/{uid}/store/{key}`), 오프라인 캐시 포함 |
-| 로컬 모드 | Firebase 미설정 시 브라우저 `localStorage` |
+### 습관
+- **요일별 루틴**: 평일/주말 템플릿과 월~일 각각의 루틴을 미니 타임테이블에 칠한다. 루틴은 직접 칠하지 않은 빈 시간에만 반투명 사선으로 표시된다.
+- **루틴 이행률**: 지난 4주 동안 루틴대로 실제 기록한 비율을 요일별로 보여 준다.
+- **체크리스트 습관**: 매일 체크하는 습관 목록과 연속 달성 일수.
+
+### 설정
+- 계정 정보와 로그아웃.
+- 관리자에게만 보이는 **사용자 승인** 목록 (승인 / 해제 / 거절).
+- **백업 내보내기 / 가져오기** (JSON). 예전 데스크톱 버전의 데이터 파일도 그대로 가져올 수 있다.
 
 ## 시작하기
 
@@ -37,217 +41,155 @@
 npm install
 npm run dev        # http://localhost:5173/cube_scheduler/
 npm run build      # 타입 검사 + dist/ 생성
+npm run preview    # 빌드 결과 미리보기
 ```
 
-Firebase 설정이 없으면 **로컬 모드**(로그인 없음, 이 브라우저에만 저장)로 동작한다.
-Firebase 프로젝트 생성, Firestore 규칙, GitHub Pages 배포, 사용자 승인, 예전 데스크톱 데이터 이전 방법은 **[docs/SETUP.md](docs/SETUP.md)** 참고.
+`src/lib/firebaseConfig.ts` 의 `firebaseConfig` 가 `null` 이면 로그인 없이 브라우저 `localStorage` 에만 저장하는 **로컬 모드**로 동작한다.
+
+Firebase 프로젝트 만들기, 보안 규칙 게시, GitHub Pages 배포, 사용자 승인, 예전 데이터 이전 절차는 **[docs/SETUP.md](docs/SETUP.md)** 에 단계별로 정리되어 있다.
+
+## 기술 스택
+
+| 영역 | 기술 |
+|------|------|
+| UI | React 19, TypeScript 5, Vite 6 |
+| 스타일 | 단일 CSS (`src/styles/global.css`), CSS 변수 토큰, 컨테이너 쿼리, Pretendard |
+| 인증 | Firebase Authentication (Google 로그인) |
+| 데이터 | Cloud Firestore, 오프라인 캐시(IndexedDB) |
+| 배포 | GitHub Pages, GitHub Actions (`main` push 시 자동) |
+
+외부 라이브러리는 `firebase`, `uuid` 두 개뿐이다.
 
 ## 프로젝트 구조
 
 ```
 cube_scheduler/
-├── .github/workflows/deploy.yml  # GitHub Pages 자동 배포
-├── docs/SETUP.md                 # Firebase / 배포 / 승인 설정 가이드
-├── firestore.rules               # Firestore 보안 규칙 (콘솔에 붙여넣기)
+├── .github/workflows/deploy.yml   # GitHub Pages 자동 배포
+├── docs/SETUP.md                  # Firebase / 배포 / 승인 설정 가이드
+├── firestore.rules                # Firestore 보안 규칙 (콘솔에 붙여넣기)
+├── public/                        # 앱 아이콘, 활동별 방 이미지(room_*.png)
 ├── src/
-│   ├── App.tsx           # 루트 컴포넌트. 헤더 + 탭 전환 + 스케줄 페이지 (사이드/메인 2열)
-│   ├── main.tsx          # React 엔트리포인트. AuthProvider > AuthGate > App
+│   ├── main.tsx                   # 엔트리. AuthProvider > AuthGate > App
+│   ├── App.tsx                    # 헤더 + 탭 전환 + 스케줄 페이지
 │   ├── auth/
-│   │   ├── AuthContext.tsx  # Google 로그인 상태 + members/{uid} 승인 상태 구독
-│   │   ├── AuthGate.tsx     # 로그인 / 승인 대기 화면
-│   │   └── AdminPanel.tsx   # 관리자용 승인 목록
+│   │   ├── AuthContext.tsx        # 로그인 상태, members/{uid} 승인 상태 구독, 저장소 백엔드 전환
+│   │   ├── AuthGate.tsx           # 로그인 / 승인 대기 화면
+│   │   └── AdminPanel.tsx         # 관리자용 승인 목록
 │   ├── lib/
-│   │   ├── firebaseConfig.ts # Firebase 설정값 + 관리자 이메일 (여기만 수정)
-│   │   ├── firebase.ts       # Firebase 초기화 (Auth, Firestore + 오프라인 캐시)
-│   │   └── storage.ts        # 저장소 추상화: LocalStorageBackend / FirestoreBackend
+│   │   ├── firebaseConfig.ts      # Firebase 설정값 + 관리자 이메일 (설정은 여기만)
+│   │   ├── firebase.ts            # Auth / Firestore 초기화
+│   │   └── storage.ts             # 키-값 저장소 추상화 (localStorage / Firestore)
 │   ├── components/
-│   │   ├── AppHeader.tsx          # 상단 헤더(로고·탭·시계·계정) + 모바일 하단 탭바
-│   │   ├── RoomCard.tsx           # 현재 활동에 따라 바뀌는 방 이미지 + 시계 카드
-│   │   ├── Icon.tsx               # 내비게이션용 선 아이콘(SVG)
-│   │   ├── TimeTable.tsx          # 144블록 메인 타임테이블. 포인터(마우스/터치) 드래그 페인트, 줌 뷰
-│   │   ├── ActivityPalette.tsx    # 활동 팔레트 칩. 클릭 선택, 우클릭 편집
-│   │   ├── RoutineEditor.tsx      # 루틴 편집 모달. 미니 타임테이블로 드래그 페인트
-│   │   ├── Calendar.tsx           # 월간 달력 모달
-│   │   ├── HourDetail.tsx         # 시간 블록 클릭 시 상세 패널 (모달 편집)
-│   │   ├── KanbanBoard.tsx        # 칸반보드 컨테이너. 3컬럼 + 티켓 CRUD
-│   │   ├── KanbanColumn.tsx       # 칸반 컬럼 (드롭 타겟)
-│   │   ├── KanbanCard.tsx         # 기차표 스타일 드래그 가능 티켓 카드
-│   │   ├── TicketModal.tsx        # 티켓 생성/편집 모달
-│   │   ├── TicketActivityFields.tsx # 활동별 조건부 세부 필드 (운동/알고리즘)
-│   │   ├── ViewShell.tsx          # 서브 페이지 공통 래퍼 (제목 + 설명 + 액션)
-│   │   └── MenuCard.tsx           # 홈 메뉴 카드 (미사용, 예비)
+│   │   ├── AppHeader.tsx          # 상단 헤더 + 모바일 하단 탭바
+│   │   ├── RoomCard.tsx           # 방 이미지 + 시계 카드
+│   │   ├── TimeTable.tsx          # 타임테이블 (드래그 페인트, 확대 뷰, 현재 시간대)
+│   │   ├── HourDetail.tsx         # 시간 상세 패널
+│   │   ├── ActivityPalette.tsx    # 활동 팔레트
+│   │   ├── Calendar.tsx           # 달력
+│   │   ├── KanbanBoard/Column/Card.tsx   # 칸반 보드
+│   │   ├── TicketModal.tsx        # 티켓 / 기록 편집 모달
+│   │   ├── TicketActivityFields.tsx      # 활동별 세부 항목 폼
+│   │   ├── MiniRoutineTimeTable.tsx      # 루틴 편집용 미니 타임테이블
+│   │   ├── RoutineAdherence.tsx   # 루틴 이행률
+│   │   ├── HabitChecklist.tsx     # 체크리스트 습관
+│   │   ├── ViewShell.tsx          # 서브 페이지 공통 래퍼
+│   │   └── Icon.tsx               # 내비게이션 SVG 아이콘
 │   ├── pages/
-│   │   ├── PatternAnalysisView.tsx # 대시보드: 일간/주간 리포트 + HTML 내보내기
-│   │   ├── HabitTrackerView.tsx    # 습관 트래커 (예정)
-│   │   ├── QuickMemoView.tsx       # 퀵 메모 / 일기 (예정)
-│   │   └── SettingsView.tsx        # 환경설정: 계정, 사용자 승인, 백업/가져오기
+│   │   ├── PatternAnalysisView.tsx  # 대시보드
+│   │   ├── HabitTrackerView.tsx     # 습관
+│   │   ├── QuickMemoView.tsx        # 메모 (예정)
+│   │   └── SettingsView.tsx         # 설정
 │   ├── hooks/
-│   │   ├── useDayData.ts    # 날짜별 데이터 CRUD 훅. 루틴 자동 병합, 자동 저장
-│   │   └── useKanbanData.ts # 칸반 티켓 CRUD 훅. dirty flag 자동 저장
-│   ├── types/
-│   │   ├── schedule.ts    # 타임테이블 타입 (TimeSlot, SlotRecord, DayData, Routine, Activity)
-│   │   ├── kanban.ts      # 칸반 타입 (Ticket, KanbanStatus, ActivitySpecificFields)
-│   │   └── navigation.ts  # 뷰 네비게이션 타입 (ViewId)
-│   └── styles/
-│       └── global.css     # 전역 스타일 (다크 브라운 테마, 기차표 티켓 CSS)
-├── public/
-│   ├── room.png ~ room_sleep.png  # 활동별 방 픽셀아트 이미지 (9종)
-│   └── icon.ico                   # 앱 아이콘
+│   │   ├── useDayData.ts          # 날짜별 데이터, 루틴 병합, 자동 저장, 실행 취소
+│   │   └── useKanbanData.ts       # 칸반 티켓 CRUD, 자동 저장
+│   ├── types/                     # schedule.ts, kanban.ts, navigation.ts
+│   └── styles/global.css
+├── index.html
 ├── package.json
 ├── tsconfig.json
-└── vite.config.ts
+└── vite.config.ts                 # base: /cube_scheduler/
 ```
 
-## 데이터 모델
+## 동작 원리
 
-### 타임테이블
-
-```typescript
-// 타임라인 기록 (슬롯에 저장되는 상세 정보)
-interface SlotRecord {
-  title: string
-  description: string
-  activityFields?: ActivitySpecificFields
-}
-
-// 10분 슬롯 하나
-interface TimeSlot {
-  label: string        // 활동 이름 (예: "알고리즘")
-  color: string        // 색상 코드 (예: "#e8a87c")
-  detail?: string      // 세부 메모
-  ticketId?: string    // 칸반 티켓 드래그 연결 시 참조용
-  record?: SlotRecord  // 타임라인 기록 (칸반과 별개)
-}
-
-// 하루 데이터
-interface DayData {
-  date: string                    // "2026-03-24"
-  goal: string                    // 오늘의 목표
-  slots: Record<number, TimeSlot> // key: 분(0~1430, 10 단위), 총 144칸
-}
-```
-
-### 칸반 티켓
-
-```typescript
-type KanbanStatus = 'todo' | 'progress' | 'done'
-
-interface Ticket {
-  id: string
-  title: string             // 티켓 제목
-  description: string       // 상세 내용
-  why: string               // 이 일을 하는 이유
-  activityId: string        // 연결된 활동 유형
-  status: KanbanStatus
-  activityFields: ActivitySpecificFields  // 활동별 세부 필드
-  order: number
-  createdAt: string
-  updatedAt: string
-}
-
-// 활동별 세부 필드 (조건부)
-// 운동: { exerciseType, km, minutes }
-// 알고리즘: { problemNumber, solveTime, link }
-// 기타: 없음
-```
-
-### 저장 키
-
-모든 데이터는 키-값 JSON 으로 저장된다. Firestore 에서는 `users/{uid}/store/{key}` 문서의 `json` 필드(문자열)에, 로컬 모드에서는 `localStorage` 의 `scheduler:{key}` 에 저장된다.
-
-| 키 | 내용 |
-|--------|------|
-| `day-YYYY-MM-DD` | 해당 날짜의 DayData |
-| `routines-weekly` | 요일별 Routine[] |
-| `activities` | Activity[] (사용자 정의 팔레트) |
-| `tickets` | Ticket[] (칸반 보드 전체, 날짜 무관) |
-| `habits`, `habit-checks-YYYY-MM-DD` | 습관 목록, 날짜별 체크 |
-
-Firestore 백엔드는 사용자의 `store` 컬렉션 전체를 실시간 구독해 메모리 캐시로 들고 있으며, 저장은 키별로 600ms 디바운스 후 기록한다 (탭 전환/종료 시 즉시 flush).
-
-승인 상태는 `members/{uid}` 문서 (`email`, `displayName`, `status: 'pending' | 'approved'`) 에 저장된다.
-
-## 핵심 동작 방식
-
-### 팔레트 선택 → 드래그 페인트
-1. 팔레트에서 활동 칩 클릭 (선택 상태)
-2. 타임테이블 위에서 마우스 드래그 → 선택된 활동으로 슬롯 채움
-3. **드래그 완료 시 활동 선택 자동 해제** → 현재 시간대 패널로 전환
-4. 지우개 선택 후 드래그 → 슬롯 삭제
-5. 드래그 중 아래에 줌 뷰(3시간 확대)로 정밀 조작
-
-### 타임라인 기록 (칸반과 독립)
-- 현재 시간대 / 시간 블록 클릭 시 기록 카드 표시
-- **카드 클릭 → TicketModal이 모달로 열림** (제목, 상세, 활동별 필드 편집)
-- 저장 시 슬롯의 `record` 필드에 저장 (칸반보드에는 추가되지 않음)
-- 활동 유형에 따라 자동으로 세부 필드 표시 (운동: 종류/km/분, 알고리즘: 문제번호/시간/링크)
-- 루틴은 현재 시간대/시간 상세 패널에서 표시되지 않음
-
-### 칸반보드 (Jira 스타일)
-- **3컬럼**: Todo / Progress / Done
-- **티켓 생성**: `+ 티켓 추가` 버튼 → 모달에서 제목, 상세, 활동 유형, Why 입력
-- **드래그앤드롭**: HTML5 DnD API로 컬럼 간 이동, 순서 변경
-- **기차표 비주얼**: 왼쪽 본문(활동 컬러 헤더바) + 세로 절취선 + 오른쪽 컬러 스텁 + 톱니 가장자리
-
-### 바코드 뜯기 (Progress → Done)
-- Progress 티켓의 오른쪽 스텁을 **오른쪽으로 드래그** → 50px 이상 당기면 뜯어짐
-- 자동으로 Done 컬럼으로 이동
-- **상태별 비주얼**:
-  - Todo: 깔끔한 기차표
-  - Progress: 스텁이 살짝 흔들림 (뜯을랑 말랑 애니메이션)
-  - Done: 스텁 제거 + 찢긴 가장자리 표시 + 투명도 65%
-
-### 칸반 → 타임테이블 연동
-- **Progress 티켓**을 타임테이블의 **이미 같은 활동으로 칠해진 슬롯** 위로 드래그앤드롭
-- 해당 연속 구간 전체에 `ticketId`가 연결됨
-- 타임라인에서 삭제해도 칸반에는 영향 없음 (독립적)
-
-### 대시보드 (일간/주간 리포트)
-- 왼쪽 패널 📊 아이콘으로 진입
-- **하루 일과**: 타임라인 바 + 활동별 시간 요약 + 기록 제목별 상세 (루틴 제외)
-- **주간 현황**: 월~일 7일 타임라인 + 주간 합산 활동별 시간 (제목 기반 그룹핑)
-- **날짜 선택**: date input으로 원하는 날짜/주 선택 가능
-- **타임라인 hover**: 마우스 올리면 `00:30 ~ 03:20 알고리즘 스터디` 형태로 연속 구간 범위 표시
-- **HTML 클립보드 복사**: 인라인 스타일이 포함된 HTML 소스코드를 텍스트로 복사 → 블로그 HTML 편집기에 붙여넣기
-  - tooltip CSS(`<style>` 블록)도 포함하여 블로그에서도 hover 동작
-  - 첫 복사 시 Tistory/블로그 붙여넣기 튜토리얼 모달 표시
-  - 하단에 Cube Scheduler GitHub 링크 포함
-
-### 루틴 시스템
-- 루틴은 사용자가 직접 칠하지 않은 빈 슬롯에만 자동 적용 (수동 입력 우선)
-- 타임테이블에서 반투명 + 사선 패턴으로 구분 표시
-- 현재 시간대 패널, 대시보드에서는 루틴 미표시
-
-### 방 이미지 연동
-- 현재 시간의 활동명으로 `ROOM_MAP` 조회 → 매칭되는 이미지로 왼쪽 패널 변경
-- 다른 날짜를 보고 있어도 오늘 데이터 기준으로 이미지 결정
-
-## 데이터 흐름
+### 데이터 흐름
 
 ```
 컴포넌트 / 훅
-  ↓ storage.loadData / saveData / listKeys   (src/lib/storage.ts)
-현재 StorageBackend
-  ├─ LocalStorageBackend   (로그인 전, 또는 Firebase 미설정)
-  └─ FirestoreBackend      (로그인 + 승인 후) → users/{uid}/store/{key}
+  ↓ storage.loadData(key) / saveData(key, data) / listKeys(prefix)
+현재 StorageBackend  (src/lib/storage.ts)
+  ├─ LocalStorageBackend  : 로그인 전, 또는 Firebase 미설정
+  └─ FirestoreBackend     : 로그인 + 승인 후 → users/{uid}/store/{key}
 ```
 
-인증 상태 흐름 (`src/auth/AuthContext.tsx`):
+- 모든 데이터는 **키-값 JSON** 이다. Firestore에서는 문서의 `json` 필드에 문자열로 저장한다.
+- `FirestoreBackend` 는 사용자의 `store` 컬렉션 전체를 실시간 구독해 메모리에 들고 있으므로 다른 기기에서 고친 내용도 바로 반영된다. 저장은 키별로 600ms 디바운스 후 기록하고, 탭을 벗어나거나 닫을 때 즉시 flush 한다.
+- 오프라인이면 Firestore 로컬 캐시에 쌓였다가 재접속 시 동기화된다.
+
+| 키 | 내용 |
+|----|------|
+| `day-YYYY-MM-DD` | 그 날의 `DayData` (목표, 슬롯) |
+| `activities` | `Activity[]` 팔레트 |
+| `routines-weekly` | 요일별 `Routine[]` |
+| `tickets` | 칸반 `Ticket[]` 전체 |
+| `habits`, `habit-checks-YYYY-MM-DD` | 습관 목록, 날짜별 체크 |
+
+### 인증 / 승인
 
 ```
 onAuthStateChanged
-  ├─ 로그아웃  → status 'signed-out'  → 로그인 화면
-  └─ 로그인    → members/{uid} 구독
-        ├─ 문서 없음        → pending 으로 생성 (관리자면 approved)
-        ├─ status pending   → '승인 대기' 화면
+  ├─ 로그아웃  → 로그인 화면 (localStorage 백엔드)
+  └─ 로그인    → members/{uid} 문서 구독
+        ├─ 문서 없음        → status 'pending' 으로 생성 (관리자 이메일이면 'approved')
+        ├─ status pending   → "승인 대기 중" 화면
         └─ status approved  → FirestoreBackend 활성화 → 앱 표시
 ```
 
-## UI 테마
+관리자는 이메일로 판별하며 `src/lib/firebaseConfig.ts` 의 `ADMIN_EMAIL` 과 `firestore.rules` 두 곳에 같은 값을 둔다. 보안 규칙은 다음을 강제한다.
 
-- 전체 배경: `#56423f` (다크 브라운)
-- 타임테이블/칸반 영역: 흰색 배경 (CSS 변수 로컬 오버라이드)
-- 칸반 티켓: `#f5f0e6` (크림) + 활동 컬러 헤더/스텁
-- 대시보드 리포트 카드: `#f5f0e6` 배경 + `#56423f` 헤더
-- 모달: 흰색 배경
-- 로그인 / 승인 대기 / 환경설정 카드: `--bg-secondary` 배경
+- 본인은 자기 `members` 문서를 `pending` 으로 한 번만 만들 수 있다.
+- 승인·해제·삭제와 전체 목록 조회는 관리자만.
+- `users/{uid}/store/**` 는 본인이면서 `approved` 인 경우에만 읽고 쓸 수 있다 (관리자는 항상).
+
+### 데이터 모델
+
+```ts
+interface TimeSlot {            // 10분 슬롯
+  label: string                 // 활동 이름
+  color: string
+  detail?: string
+  ticketId?: string             // 칸반 티켓 연결
+  record?: SlotRecord           // 제목 / 설명 / 활동별 세부 항목
+}
+interface DayData { date: string; goal: string; slots: Record<number, TimeSlot> }  // key: 0~1430
+
+interface Ticket {
+  id: string; title: string; description: string; why: string
+  activityId: string
+  status: 'todo' | 'progress' | 'done'
+  activityFields: ActivitySpecificFields  // exercise | algorithm | general
+  order: number; createdAt: string; updatedAt: string
+}
+
+interface Routine { id: string; name: string; color: string; startMin: number; endMin: number }
+type WeeklyRoutines = Record<'weekday' | 'weekend' | DayOfWeek, Routine[]>
+```
+
+### 화면 구성
+
+- **데스크톱**: 상단 헤더(로고, 탭, 시계, 계정) + 스케줄 페이지는 방 카드 사이드 / 메인 2열.
+- **태블릿 (≤1023px)**: 한 열. 방 카드는 가로형.
+- **모바일 (≤719px)**: 하단 탭바. 타임테이블과 루틴 편집기는 가로 스크롤(처음 열면 현재 시각 위치), 칸반은 컬럼 단위 스냅 스크롤, 모달은 바텀 시트.
+- 타임테이블·루틴 편집·티켓 찢기는 포인터 이벤트로 구현되어 마우스와 터치를 모두 지원한다.
+
+## 테마
+
+- 배경 `#56423f` 다크 브라운, 포인트 `#e8a87c`. 토큰은 `global.css` 의 `:root` 에 있다.
+- 타임테이블·칸반·모달은 흰 배경 카드로 대비를 준다 (해당 영역에서 CSS 변수를 로컬로 덮어씀).
+- 칸반 티켓은 크림색 기차표. Progress 상태는 스텁이 살짝 흔들리고, Done 은 스텁이 떼어진 모양이다.
+
+## 로드맵
+
+- 메모 / 일기 페이지
+- 지인만 가입할 수 있는 초대 링크
+- PWA (홈 화면 추가, 오프라인 실행)
