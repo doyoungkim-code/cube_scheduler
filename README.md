@@ -49,6 +49,8 @@ npm install
 npm run dev        # http://localhost:5173/cube_scheduler/
 npm run build      # 타입 검사 + dist/ 생성
 npm run preview    # 빌드 결과 미리보기
+npm test           # 유닛 테스트 (Vitest, src/**/*.test.ts)
+npm run lint       # ESLint (typescript-eslint + react-hooks)
 ```
 
 `src/lib/firebaseConfig.ts` 의 `firebaseConfig` 가 `null` 이면 로그인 없이 브라우저 `localStorage` 에만 저장하는 **로컬 모드**로 동작한다.
