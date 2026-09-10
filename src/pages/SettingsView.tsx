@@ -5,7 +5,7 @@ import AdminPanel from '../auth/AdminPanel'
 import { storage } from '../lib/storage'
 
 const EXPORT_MARKER = '__scheduler_export__'
-const KEY_PREFIXES = ['day-', 'routines', 'activities', 'habits', 'habit-checks-', 'tickets']
+const KEY_PREFIXES = ['day-', 'routines', 'activities', 'habits', 'habit-checks-', 'tickets', 'memo-']
 
 async function collectAll(): Promise<Record<string, unknown>> {
   const out: Record<string, unknown> = {}

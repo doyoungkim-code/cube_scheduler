@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import type { Ticket } from '../types/kanban'
+import type { Ticket, KanbanStatus } from '../types/kanban'
 import type { Activity } from '../types/schedule'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -8,15 +8,24 @@ const STATUS_LABEL: Record<string, string> = {
   done: 'COMPLETE',
 }
 
+/** 상태별로 카드에 표시할 이동 버튼 */
+const MOVE_TARGETS: Record<KanbanStatus, { status: KanbanStatus; label: string }[]> = {
+  todo: [{ status: 'progress', label: 'Progress →' }],
+  progress: [{ status: 'todo', label: '← To Do' }, { status: 'done', label: 'Done →' }],
+  done: [{ status: 'progress', label: '← Progress' }],
+}
+
 const TEAR_THRESHOLD = 50
 
 interface Props {
   ticket: Ticket
   ticketNumber: number
   activities: Activity[]
+  showMoveButtons?: boolean
   onClick: () => void
   onDragStart: (ticketId: string) => void
   onDragEnd: () => void
+  onMove?: (status: KanbanStatus) => void
   onTearOff?: (ticketId: string) => void
 }
 
@@ -38,7 +47,7 @@ function getActivityDetail(ticket: Ticket): string | null {
   return null
 }
 
-export default function KanbanCard({ ticket, ticketNumber, activities, onClick, onDragStart, onDragEnd, onTearOff }: Props) {
+export default function KanbanCard({ ticket, ticketNumber, activities, showMoveButtons, onClick, onDragStart, onDragEnd, onMove, onTearOff }: Props) {
   const activity = activities.find(a => a.id === ticket.activityId)
   const accentColor = activity?.color ?? '#8e8e93'
   const created = new Date(ticket.createdAt)
@@ -104,7 +113,7 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
       ? { width: `${2 + tearProgress * 8}px`, animation: 'none', transition: 'none' }
       : undefined
 
-  return (
+  const card = (
     <div
       className={`cinema-ticket cinema-ticket--${ticket.status} ${tornOff ? 'cinema-ticket--ripping' : ''} ${tearDrag ? 'cinema-ticket--tearing' : ''}`}
       draggable={!tearingRef.current && !tornOff}
@@ -170,6 +179,19 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
         <div className="cinema-ticket-stub-status">{STATUS_LABEL[ticket.status]}</div>
         {/* 톱니 가장자리 */}
         <div className="cinema-ticket-zigzag" />
+      </div>
+    </div>
+  )
+
+  if (!showMoveButtons || !onMove) return card
+
+  return (
+    <div className="kcard">
+      {card}
+      <div className="kcard-actions">
+        {MOVE_TARGETS[ticket.status].map(t => (
+          <button key={t.status} className="kcard-move" onClick={() => onMove(t.status)}>{t.label}</button>
+        ))}
       </div>
     </div>
   )

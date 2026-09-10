@@ -5,8 +5,15 @@ import Calendar from './components/Calendar'
 import KanbanBoard from './components/KanbanBoard'
 import AppHeader from './components/AppHeader'
 import RoomCard from './components/RoomCard'
+import TimelineVertical from './components/TimelineVertical'
+import TodaySummary from './components/TodaySummary'
+import WeekStrip from './components/WeekStrip'
+import QuickMemo from './components/QuickMemo'
+import HabitChecklist from './components/HabitChecklist'
 import { useDayData } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
+import { useMediaQuery, MQ_MOBILE, MQ_WIDE } from './hooks/useMediaQuery'
+import { dateKeyOf, shiftDateKey } from './lib/slots'
 import { SLEEP_ACTIVITY } from './types/schedule'
 import type { ViewId } from './types/navigation'
 import PatternAnalysisView from './pages/PatternAnalysisView'
@@ -29,26 +36,18 @@ const ROOM_MAP: Record<string, string> = {
   '수면': './room_sleep.png',
 }
 
-function todayKeyOf(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function shiftDate(key: string, days: number): string {
-  const [y, m, d] = key.split('-').map(Number)
-  const dt = new Date(y, m - 1, d + days)
-  return todayKeyOf(dt)
-}
-
 function App() {
   const [currentView, setCurrentView] = useState<ViewId>('scheduler')
   const [now, setNow] = useState(new Date())
-  const today = todayKeyOf(now)
+  const today = dateKeyOf(now)
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
   const todayDataAux = useDayData(selectedDate === today ? '__unused__' : today)
   const kanban = useKanbanData()
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
+  const isMobile = useMediaQuery(MQ_MOBILE)
+  const isWide = useMediaQuery(MQ_WIDE)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -129,62 +128,110 @@ function App() {
     case 'quick-memo': page = <QuickMemoView />; break
     case 'settings': page = <SettingsView />; break
     default:
-      page = (
-        <div className="sched">
-          <aside className="sched-side">
-            <RoomCard
-              now={now}
-              roomImg={roomImg}
-              currentLabel={currentLabel}
-              currentColor={currentSlot?.color}
-            />
-          </aside>
-
-          <div className="sched-main">
-            <div className="datebar">
-              <button className="datebar-nav" aria-label="이전 날" onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}>‹</button>
-              <button className="datebar-date" onClick={() => setShowCalendar(true)}>
-                <span className="datebar-date-main">{m}월 {d}일</span>
-                <span className="datebar-date-sub">{dayName}요일{isToday ? ' · 오늘' : ''}</span>
-              </button>
-              <button className="datebar-nav" aria-label="다음 날" onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}>›</button>
-              <span className="datebar-spacer" />
-              {!isToday && (
-                <button className="btn-today" onClick={() => setSelectedDate(today)}>오늘로</button>
-              )}
-              <button className="btn-action" onClick={() => setShowCalendar(true)}>달력</button>
-            </div>
-
-            <ActivityPalette
-              activities={data.activities}
-              selectedId={selectedActivityId}
-              onSelect={setSelectedActivityId}
-              onChange={data.setActivities}
-            />
-            <TimeTable
-              day={data.day}
-              rawSlots={data.rawDay.slots}
-              routines={data.routines}
-              selectedActivity={selectedActivity}
-              tickets={kanban.tickets}
-              activities={data.activities}
-              onSlotChange={data.setSlot}
-              onSlotRangeChange={data.setSlotRange}
-              onTicketDrop={handleTicketDropOnSlot}
-              onDeselectActivity={() => setSelectedActivityId(null)}
-            />
-            <KanbanBoard
-              tickets={kanban.tickets}
-              activities={data.activities}
-              addTicket={kanban.addTicket}
-              updateTicket={kanban.updateTicket}
-              deleteTicket={kanban.deleteTicket}
-              moveTicket={kanban.moveTicket}
-              getTicketsByStatus={kanban.getTicketsByStatus}
-            />
+      {
+        const datebar = (
+          <div className="datebar">
+            <button className="datebar-nav" aria-label="이전 날" onClick={() => setSelectedDate(shiftDateKey(selectedDate, -1))}>‹</button>
+            <button className="datebar-date" onClick={() => setShowCalendar(true)}>
+              <span className="datebar-date-main">{m}월 {d}일</span>
+              <span className="datebar-date-sub">{dayName}요일{isToday ? ' · 오늘' : ''}</span>
+            </button>
+            <button className="datebar-nav" aria-label="다음 날" onClick={() => setSelectedDate(shiftDateKey(selectedDate, 1))}>›</button>
+            <span className="datebar-spacer" />
+            {!isToday && (
+              <button className="btn-today" onClick={() => setSelectedDate(today)}>오늘로</button>
+            )}
+            <button className="btn-action" onClick={() => setShowCalendar(true)}>달력</button>
           </div>
-        </div>
-      )
+        )
+        const weekStrip = (
+          <WeekStrip
+            selectedDate={selectedDate}
+            todayKey={today}
+            currentSlots={data.rawDay.slots}
+            onSelectDate={setSelectedDate}
+          />
+        )
+        const palette = (
+          <ActivityPalette
+            activities={data.activities}
+            selectedId={selectedActivityId}
+            onSelect={setSelectedActivityId}
+            onChange={data.setActivities}
+          />
+        )
+        const timeline = isMobile ? (
+          <TimelineVertical
+            day={data.day}
+            rawSlots={data.rawDay.slots}
+            routines={data.routines}
+            selectedActivity={selectedActivity}
+            activities={data.activities}
+            onSlotChange={data.setSlot}
+            onSlotRangeChange={data.setSlotRange}
+            onDeselectActivity={() => setSelectedActivityId(null)}
+          />
+        ) : (
+          <TimeTable
+            day={data.day}
+            rawSlots={data.rawDay.slots}
+            routines={data.routines}
+            selectedActivity={selectedActivity}
+            tickets={kanban.tickets}
+            activities={data.activities}
+            onSlotChange={data.setSlot}
+            onSlotRangeChange={data.setSlotRange}
+            onTicketDrop={handleTicketDropOnSlot}
+            onDeselectActivity={() => setSelectedActivityId(null)}
+          />
+        )
+        const board = (
+          <KanbanBoard
+            variant={isMobile ? 'tabs' : isWide ? 'stack' : 'columns'}
+            tickets={kanban.tickets}
+            activities={data.activities}
+            addTicket={kanban.addTicket}
+            updateTicket={kanban.updateTicket}
+            deleteTicket={kanban.deleteTicket}
+            moveTicket={kanban.moveTicket}
+            getTicketsByStatus={kanban.getTicketsByStatus}
+          />
+        )
+        const roomCard = (
+          <RoomCard now={now} roomImg={roomImg} currentLabel={currentLabel} currentColor={currentSlot?.color} />
+        )
+        const memo = <QuickMemo key={selectedDate} dateKey={selectedDate} />
+
+        page = isMobile ? (
+          <div className="sched sched--mobile">
+            {roomCard}
+            {datebar}
+            {weekStrip}
+            {palette}
+            {timeline}
+            {board}
+            <HabitChecklist />
+            {memo}
+          </div>
+        ) : (
+          <div className={`sched ${isWide ? 'sched--wide' : ''}`}>
+            <aside className="sched-left">
+              {roomCard}
+              <TodaySummary slots={data.rawDay.slots} isToday={isToday} />
+              <HabitChecklist />
+            </aside>
+            <div className="sched-center">
+              {datebar}
+              {weekStrip}
+              {palette}
+              {timeline}
+              {!isWide && board}
+              {memo}
+            </div>
+            {isWide && <aside className="sched-right">{board}</aside>}
+          </div>
+        )
+      }
   }
 
   return (

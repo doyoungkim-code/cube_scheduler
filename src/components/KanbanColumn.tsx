@@ -14,11 +14,14 @@ interface Props {
   allTickets: Ticket[]
   activities: Activity[]
   dragOverIndex: number | null
+  showHeader?: boolean
+  showMoveButtons?: boolean
   onTicketClick: (ticket: Ticket) => void
   onDragStart: (ticketId: string) => void
   onDragEnd: () => void
   onDragOver: (e: React.DragEvent, status: KanbanStatus, index: number) => void
   onDrop: (e: React.DragEvent, status: KanbanStatus) => void
+  onMove?: (ticketId: string, status: KanbanStatus) => void
   onTearOff?: (ticketId: string) => void
 }
 
@@ -28,8 +31,8 @@ function getTicketNumber(ticket: Ticket, allTickets: Ticket[]): number {
 }
 
 export default function KanbanColumn({
-  status, tickets, allTickets, activities, dragOverIndex,
-  onTicketClick, onDragStart, onDragEnd, onDragOver, onDrop, onTearOff,
+  status, tickets, allTickets, activities, dragOverIndex, showHeader = true, showMoveButtons = false,
+  onTicketClick, onDragStart, onDragEnd, onDragOver, onDrop, onMove, onTearOff,
 }: Props) {
   return (
     <div
@@ -41,28 +44,23 @@ export default function KanbanColumn({
         let idx = cards.length
         for (let i = 0; i < cards.length; i++) {
           const rect = cards[i].getBoundingClientRect()
-          if (e.clientY < rect.top + rect.height / 2) {
-            idx = i
-            break
-          }
+          if (e.clientY < rect.top + rect.height / 2) { idx = i; break }
         }
         onDragOver(e, status, idx)
       }}
-      onDrop={e => {
-        e.preventDefault()
-        onDrop(e, status)
-      }}
+      onDrop={e => { e.preventDefault(); onDrop(e, status) }}
       onDragLeave={e => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          onDragOver(e, status, -1)
-        }
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) onDragOver(e, status, -1)
       }}
     >
-      <div className="kanban-column-header">
-        <span className="kanban-column-title">{COLUMN_LABELS[status]}</span>
-        <span className="kanban-column-count">{tickets.length}</span>
-      </div>
+      {showHeader && (
+        <div className="kanban-column-header">
+          <span className="kanban-column-title">{COLUMN_LABELS[status]}</span>
+          <span className="kanban-column-count">{tickets.length}</span>
+        </div>
+      )}
       <div className="kanban-column-body">
+        {tickets.length === 0 && <div className="kanban-empty">티켓이 없어요</div>}
         {tickets.map((ticket, i) => (
           <div key={ticket.id}>
             {dragOverIndex === i && <div className="kanban-drop-indicator" />}
@@ -70,9 +68,11 @@ export default function KanbanColumn({
               ticket={ticket}
               ticketNumber={getTicketNumber(ticket, allTickets)}
               activities={activities}
+              showMoveButtons={showMoveButtons}
               onClick={() => onTicketClick(ticket)}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
+              onMove={onMove ? (s) => onMove(ticket.id, s) : undefined}
               onTearOff={onTearOff}
             />
           </div>

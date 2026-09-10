@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { Activity, DayData, Routine, TimeSlot, SlotRecord } from '../types/schedule'
+import type { Activity, DayData, Routine, TimeSlot } from '../types/schedule'
 import type { Ticket } from '../types/kanban'
 import { activityFieldsForName } from '../types/kanban'
 import TicketModal from './TicketModal'
 import HourDetail from './HourDetail'
+import { TOTAL_MIN, fmtMin, groupAllSlots, type TaskGroup } from '../lib/slots'
 
 interface TimeTableProps {
   day: DayData
@@ -18,19 +19,12 @@ interface TimeTableProps {
   onDeselectActivity?: () => void
 }
 
-const TOTAL_MIN = 1440
 const SLOT_COUNT = 144
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const ZOOM_SLOTS = 18
 
 function fmtH(h: number): string {
   return String(h).padStart(2, '0')
-}
-
-function fmtMin(m: number): string {
-  const h = Math.floor(m / 60)
-  const mm = m % 60
-  return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
 }
 
 function clampMin(m: number): number {
@@ -397,18 +391,6 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
   )
 }
 
-interface TaskGroup {
-  label: string
-  color: string
-  detail: string
-  ticketId: string | undefined
-  record: SlotRecord | undefined
-  startMin: number
-  endMin: number
-  isRoutine: boolean
-  containsNow: boolean
-}
-
 interface CurrentTasksProps {
   day: DayData
   rawSlots: Record<number, TimeSlot>
@@ -418,44 +400,6 @@ interface CurrentTasksProps {
   activities: Activity[]
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
   onSlotChange: (min: number, slot: TimeSlot | null) => void
-}
-
-function groupAllSlots(day: DayData, rawSlots: Record<number, TimeSlot>, routineMap: Record<number, Routine>, nowSlotMin: number): TaskGroup[] {
-  const groups: TaskGroup[] = []
-  let current: TaskGroup | null = null
-
-  for (let m = 0; m < 1440; m += 10) {
-    const slot = day.slots[m]
-    if (!slot) {
-      if (current) { groups.push(current); current = null }
-      continue
-    }
-    const raw = rawSlots[m]
-    const isRoutine = !raw && !!routineMap[m]
-
-    if (current && current.label === slot.label && current.color === slot.color && current.isRoutine === isRoutine) {
-      current.endMin = m + 10
-      if (m === nowSlotMin) current.containsNow = true
-      if (slot.detail && !current.detail) current.detail = slot.detail
-      if (slot.ticketId && !current.ticketId) current.ticketId = slot.ticketId
-      if (slot.record && !current.record) current.record = slot.record
-    } else {
-      if (current) groups.push(current)
-      current = {
-        label: slot.label,
-        color: slot.color,
-        detail: slot.detail ?? '',
-        ticketId: slot.ticketId,
-        record: slot.record,
-        startMin: m,
-        endMin: m + 10,
-        isRoutine,
-        containsNow: m === nowSlotMin,
-      }
-    }
-  }
-  if (current) groups.push(current)
-  return groups
 }
 
 function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, activities, onSlotRangeChange, onSlotChange }: CurrentTasksProps) {
