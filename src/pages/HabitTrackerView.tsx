@@ -43,7 +43,7 @@ const DAY_LABELS: { key: DayOfWeek; label: string }[] = [
   { key: 'thu', label: '목' }, { key: 'fri', label: '금' }, { key: 'sat', label: '토' }, { key: 'sun', label: '일' },
 ]
 
-export default function HabitTrackerView({ onGoHome }: { onGoHome: () => void }) {
+export default function HabitTrackerView() {
   const today = todayKey()
   const data = useDayData(today)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -79,7 +79,7 @@ export default function HabitTrackerView({ onGoHome }: { onGoHome: () => void })
   }
 
   return (
-    <ViewShell title="습관 트래커" onGoHome={onGoHome}>
+    <ViewShell title="습관 트래커">
       <div className="habit-page">
         {/* 활동 팔레트 (공유) */}
         <div className="habit-palette">
@@ -109,6 +109,14 @@ export default function HabitTrackerView({ onGoHome }: { onGoHome: () => void })
           </button>
         </div>
 
+        {/* 루틴 설정 섹션 */}
+        <div className="habit-card">
+        <div className="habit-card-head">
+          <h3 className="habit-section-title">루틴 설정</h3>
+          <span className="habit-card-hint">팔레트에서 활동을 고르고 시간대를 드래그해 칠하세요</span>
+        </div>
+        <div className="habit-scroll">
+        <div className="habit-scroll-inner">
         {/* 시간 라벨 */}
         <div className="habit-hours">
           <div className="habit-hours-spacer" />
@@ -118,10 +126,7 @@ export default function HabitTrackerView({ onGoHome }: { onGoHome: () => void })
           <div className="habit-hours-action-spacer" />
         </div>
 
-        {/* 루틴 설정 섹션 */}
         <div className="habit-section">
-          <h3 className="habit-section-title">루틴 설정</h3>
-
           {/* 템플릿 2개 */}
           <RoutineRow
             title="평일" subtitle="템플릿"
@@ -149,17 +154,22 @@ export default function HabitTrackerView({ onGoHome }: { onGoHome: () => void })
             />
           ))}
         </div>
-
-        {/* 루틴 이행률 */}
-        <div className="habit-section">
-          <h3 className="habit-section-title">루틴 이행률</h3>
-          <RoutineAdherence weekly={data.weekly} />
+        </div>
+        </div>
         </div>
 
-        {/* 체크리스트 습관 */}
-        <div className="habit-section">
-          <h3 className="habit-section-title">체크리스트 습관</h3>
-          <HabitChecklist />
+        <div className="habit-bottom">
+          {/* 루틴 이행률 */}
+          <div className="habit-section">
+            <h3 className="habit-section-title">루틴 이행률</h3>
+            <RoutineAdherence weekly={data.weekly} />
+          </div>
+
+          {/* 체크리스트 습관 */}
+          <div className="habit-section">
+            <h3 className="habit-section-title">체크리스트 습관</h3>
+            <HabitChecklist />
+          </div>
         </div>
       </div>
     </ViewShell>

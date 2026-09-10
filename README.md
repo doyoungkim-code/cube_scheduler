@@ -9,14 +9,12 @@
 ## UI 구조
 <img width="2419" height="1561" alt="스크린샷 2026-04-04 225740" src="https://github.com/user-attachments/assets/111e0a02-d642-498f-818d-cebf9149f210" />
 
-### 메인 화면 (스케줄러)
-- **왼쪽 패널**: 현재 활동에 따라 방 픽셀아트 이미지가 자동 전환 + 네비게이션 아이콘
-- **오른쪽 상단**: 팔레트, 타임테이블, 현재 시간대 기록
-- **오른쪽 하단**: 칸반보드 (Todo / Progress / Done)
-- 접기 버튼(◀)으로 왼쪽 패널만 표시 가능
+### 레이아웃
+- **상단 헤더**: 로고, 페이지 탭(스케줄 / 대시보드 / 습관 / 메모 / 설정), 시계, 계정
+- **스케줄 페이지 (데스크톱)**: 왼쪽 방 카드(현재 활동에 따라 픽셀아트 전환 + 시계) / 오른쪽 날짜 바, 팔레트, 타임테이블, 칸반
+- **모바일 (≤720px)**: 한 열 배치, 하단 탭바, 타임테이블·칸반은 가로 스크롤, 모달은 바텀 시트. 타임테이블 칠하기는 터치 드래그 지원.
 
-### 네비게이션 아이콘 (왼쪽 패널 하단)
-방 이미지 아래에 아이콘 버튼으로 다른 뷰에 접근:
+### 페이지 탭
 - 📊 **대시보드** — 하루/주간 활동 리포트, HTML 내보내기
 - ✅ **습관 트래커** — (예정)
 - 📝 **퀵 메모** — (예정)
@@ -52,7 +50,7 @@ cube_scheduler/
 ├── docs/SETUP.md                 # Firebase / 배포 / 승인 설정 가이드
 ├── firestore.rules               # Firestore 보안 규칙 (콘솔에 붙여넣기)
 ├── src/
-│   ├── App.tsx           # 루트 컴포넌트. 뷰 스위처 + 스케줄러 메인 화면
+│   ├── App.tsx           # 루트 컴포넌트. 헤더 + 탭 전환 + 스케줄 페이지 (사이드/메인 2열)
 │   ├── main.tsx          # React 엔트리포인트. AuthProvider > AuthGate > App
 │   ├── auth/
 │   │   ├── AuthContext.tsx  # Google 로그인 상태 + members/{uid} 승인 상태 구독
@@ -63,7 +61,10 @@ cube_scheduler/
 │   │   ├── firebase.ts       # Firebase 초기화 (Auth, Firestore + 오프라인 캐시)
 │   │   └── storage.ts        # 저장소 추상화: LocalStorageBackend / FirestoreBackend
 │   ├── components/
-│   │   ├── TimeTable.tsx          # 144블록 메인 타임테이블. 드래그 페인트, 줌 뷰
+│   │   ├── AppHeader.tsx          # 상단 헤더(로고·탭·시계·계정) + 모바일 하단 탭바
+│   │   ├── RoomCard.tsx           # 현재 활동에 따라 바뀌는 방 이미지 + 시계 카드
+│   │   ├── Icon.tsx               # 내비게이션용 선 아이콘(SVG)
+│   │   ├── TimeTable.tsx          # 144블록 메인 타임테이블. 포인터(마우스/터치) 드래그 페인트, 줌 뷰
 │   │   ├── ActivityPalette.tsx    # 활동 팔레트 칩. 클릭 선택, 우클릭 편집
 │   │   ├── RoutineEditor.tsx      # 루틴 편집 모달. 미니 타임테이블로 드래그 페인트
 │   │   ├── Calendar.tsx           # 월간 달력 모달
@@ -73,7 +74,7 @@ cube_scheduler/
 │   │   ├── KanbanCard.tsx         # 기차표 스타일 드래그 가능 티켓 카드
 │   │   ├── TicketModal.tsx        # 티켓 생성/편집 모달
 │   │   ├── TicketActivityFields.tsx # 활동별 조건부 세부 필드 (운동/알고리즘)
-│   │   ├── ViewShell.tsx          # 서브 뷰 공통 래퍼 (돌아가기 버튼 + 제목)
+│   │   ├── ViewShell.tsx          # 서브 페이지 공통 래퍼 (제목 + 설명 + 액션)
 │   │   └── MenuCard.tsx           # 홈 메뉴 카드 (미사용, 예비)
 │   ├── pages/
 │   │   ├── PatternAnalysisView.tsx # 대시보드: 일간/주간 리포트 + HTML 내보내기

@@ -22,8 +22,9 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
     return Math.min(1430, Math.floor((ratio * TOTAL_MIN) / 10) * 10)
   }, [])
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!selectedActivity) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     e.preventDefault()
     const m = minFromMouse(e.clientX)
     setPaintDrag({ startMin: m, currentMin: m })
@@ -31,7 +32,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
 
   useEffect(() => {
     if (!paintDrag) return
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       setPaintDrag(prev => prev ? { ...prev, currentMin: minFromMouse(e.clientX) } : null)
     }
     const onUp = () => {
@@ -65,11 +66,13 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
       }
       setPaintDrag(null)
     }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
     return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
     }
   }, [paintDrag, selectedActivity, routines, onChange, minFromMouse])
 
@@ -88,7 +91,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
   return (
     <div
       className={`mini-rt-track ${isPaintMode ? 'mini-rt-track--paint' : ''}`}
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
     >
       <div className="mini-rt-blocks" ref={blocksRef}>
         {Array.from({ length: SLOT_COUNT }, (_, i) => {

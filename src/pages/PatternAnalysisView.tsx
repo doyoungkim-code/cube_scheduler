@@ -360,7 +360,7 @@ function WeekReportCard({ weekData }: { weekData: { date: string; stats: RecordG
 
 // ===== 메인 =====
 
-export default function PatternAnalysisView({ onGoHome }: { onGoHome: () => void }) {
+export default function PatternAnalysisView() {
   const [mode, setMode] = useState<'day' | 'week'>('day')
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
@@ -430,7 +430,16 @@ export default function PatternAnalysisView({ onGoHome }: { onGoHome: () => void
   }
 
   return (
-    <ViewShell title="대시보드" onGoHome={onGoHome}>
+    <ViewShell
+      title="대시보드"
+      description="하루 / 주간 활동 리포트를 보고 블로그용 HTML로 복사합니다."
+      actions={
+        <>
+          {copyMsg && <span className="share-copy-msg">{copyMsg}</span>}
+          <button className="btn-action btn-action--primary" onClick={handleCopy}>클립보드 복사</button>
+        </>
+      }
+    >
       <div className="share-page">
         <div className="share-toolbar">
           <div className="dash-tabs">
@@ -443,10 +452,6 @@ export default function PatternAnalysisView({ onGoHome }: { onGoHome: () => void
             value={selectedDate}
             onChange={e => setSelectedDate(e.target.value)}
           />
-          <div className="share-actions">
-            <button className="btn-sm btn-save" onClick={handleCopy}>클립보드 복사</button>
-            {copyMsg && <span className="share-copy-msg">{copyMsg}</span>}
-          </div>
         </div>
         <div className="share-preview">
           <div ref={reportRef}>

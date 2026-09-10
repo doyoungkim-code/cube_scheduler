@@ -21,7 +21,7 @@ async function collectAll(): Promise<Record<string, unknown>> {
   return out
 }
 
-export default function SettingsView({ onGoHome }: { onGoHome: () => void }) {
+export default function SettingsView() {
   const { status, user, isAdmin, signOut } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
@@ -71,7 +71,7 @@ export default function SettingsView({ onGoHome }: { onGoHome: () => void }) {
   }
 
   return (
-    <ViewShell title="환경설정" onGoHome={onGoHome}>
+    <ViewShell title="환경설정">
       <div className="settings-page">
 
         <section className="settings-section">

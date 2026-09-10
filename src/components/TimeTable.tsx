@@ -40,6 +40,16 @@ function clampMin(m: number): number {
 function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSlotChange, onSlotRangeChange, onTicketDrop, onDeselectActivity }: TimeTableProps) {
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const blocksRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // 좁은 화면(가로 스크롤)에서는 처음에 현재 시각이 보이도록
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || el.scrollWidth <= el.clientWidth) return
+    const d = new Date()
+    const ratio = (d.getHours() * 60 + d.getMinutes()) / TOTAL_MIN
+    el.scrollLeft = Math.max(0, ratio * el.scrollWidth - el.clientWidth / 2)
+  }, [])
   const [ticketDragOver, setTicketDragOver] = useState<{ min: number; label: string } | null>(null)
 
   // 페인트 드래그 상태
@@ -71,8 +81,10 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
   const [shiftExtend, setShiftExtend] = useState<{ label: string; color: string } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; min: number } | null>(null)
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
+  const justPainted = useRef(false)
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     const m = minFromMouse(e.clientX)
 
     if (e.shiftKey) {
@@ -86,20 +98,24 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
     }
 
     if (!selectedActivity) return
+    e.preventDefault()
     setShiftExtend(null)
     setPaintDrag({ startMin: m, currentMin: m })
   }, [selectedActivity, minFromMouse, day.slots])
 
-  // mousemove / mouseup 글로벌 이벤트
+  // pointermove / pointerup 글로벌 이벤트
   useEffect(() => {
     if (!paintDrag) return
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       setPaintDrag(prev => prev ? { ...prev, currentMin: minFromMouse(e.clientX) } : null)
     }
 
     const onUp = () => {
       if (paintDrag) {
+        // 드래그 직후 발생하는 click 으로 시간 상세가 열리는 것 방지
+        justPainted.current = true
+        setTimeout(() => { justPainted.current = false }, 150)
         const start = Math.min(paintDrag.startMin, paintDrag.currentMin)
         const end = Math.max(paintDrag.startMin, paintDrag.currentMin) + 10
 
@@ -119,17 +135,19 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
       setPaintDrag(null)
     }
 
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
     return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
     }
   }, [paintDrag, selectedActivity, shiftExtend, minFromMouse, onSlotRangeChange])
 
   // 비드래그 상태 블록 클릭
   const handleBlockClick = (slotMin: number) => {
-    if (selectedActivity || paintDrag) return
+    if (selectedActivity || paintDrag || justPainted.current) return
     const hour = Math.floor(slotMin / 60)
     setSelectedHour(selectedHour === hour ? null : hour)
   }
@@ -178,8 +196,16 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
           )}
           <span className="timetable-now">{fmtMin(nowMin)}</span>
         </div>
+        {isPaintMode && (
+          <span className="timetable-hint">
+            <span className="timetable-hint-dot" style={{ background: shiftExtend?.color ?? selectedActivity?.color }} />
+            {shiftExtend ? `${shiftExtend.label} 연장` : selectedActivity?.id === 'eraser' ? '지울 구간을 드래그' : `${selectedActivity?.name} 칠할 구간을 드래그`}
+          </span>
+        )}
       </div>
 
+      <div className="tt-scroll" ref={scrollRef}>
+      <div className="tt-scroll-inner">
       <div className="tt-hour-labels">
         {HOURS.map(h => (
           <div key={h} className="tt-hour-label">{fmtH(h)}</div>
@@ -188,7 +214,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
 
       <div
         className={`tt-track ${isPaintMode ? 'tt-track--paint' : ''} ${ticketDragOver !== null ? 'tt-track--ticket-drop' : ''}`}
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
         onDragOver={e => {
           if (!e.dataTransfer.types.includes('ticket-id')) return
           e.preventDefault()
@@ -265,6 +291,8 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
             )
           })}
         </div>
+      </div>
+      </div>
       </div>
 
       {/* 줌 뷰 */}

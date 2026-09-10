@@ -1,8 +1,8 @@
 import ViewShell from '../components/ViewShell'
 
-export default function QuickMemoView({ onGoHome }: { onGoHome: () => void }) {
+export default function QuickMemoView() {
   return (
-    <ViewShell title="퀵 메모 / 오늘 일기" onGoHome={onGoHome}>
+    <ViewShell title="퀵 메모 / 오늘 일기">
       <div className="placeholder-page">
         <span className="placeholder-icon">📝</span>
         <h2>퀵 메모 / 오늘 일기</h2>

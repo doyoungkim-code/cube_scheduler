@@ -3,6 +3,8 @@ import ActivityPalette from './components/ActivityPalette'
 import TimeTable from './components/TimeTable'
 import Calendar from './components/Calendar'
 import KanbanBoard from './components/KanbanBoard'
+import AppHeader from './components/AppHeader'
+import RoomCard from './components/RoomCard'
 import { useDayData } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
 import { SLEEP_ACTIVITY } from './types/schedule'
@@ -27,25 +29,26 @@ const ROOM_MAP: Record<string, string> = {
   '수면': './room_sleep.png',
 }
 
+function todayKeyOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
-const NAV_ICONS: { id: ViewId; icon: string; label: string }[] = [
-  { id: 'pattern-analysis', icon: '📊', label: '대시보드' },
-  { id: 'habit-tracker', icon: '✅', label: '습관' },
-  { id: 'quick-memo', icon: '📝', label: '메모' },
-  { id: 'settings', icon: '⚙️', label: '설정' },
-]
+function shiftDate(key: string, days: number): string {
+  const [y, m, d] = key.split('-').map(Number)
+  const dt = new Date(y, m - 1, d + days)
+  return todayKeyOf(dt)
+}
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewId>('scheduler')
   const [now, setNow] = useState(new Date())
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const today = todayKeyOf(now)
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
   const todayDataAux = useDayData(selectedDate === today ? '__unused__' : today)
   const kanban = useKanbanData()
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
-  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -57,6 +60,8 @@ function App() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setShowCalendar(false)
       if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        const tag = (e.target as HTMLElement | null)?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
         e.preventDefault()
         data.undo()
       }
@@ -64,6 +69,9 @@ function App() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [data.undo])
+
+  // 뷰 전환 시 스크롤 맨 위로
+  useEffect(() => { window.scrollTo({ top: 0 }) }, [currentView])
 
   const isToday = selectedDate === today
 
@@ -77,11 +85,6 @@ function App() {
     setSelectedDate(date)
     setShowCalendar(false)
   }
-
-  const toggleCollapse = useCallback(() => {
-    const next = !collapsed
-    setCollapsed(next)
-  }, [collapsed])
 
   const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {
     const ticket = kanban.getTicket(ticketId)
@@ -112,10 +115,6 @@ function App() {
   const dateObj = new Date(y, m - 1, d)
   const dayName = DAY_NAMES[dateObj.getDay()]
 
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-
   const nowMin = now.getHours() * 60 + now.getMinutes()
   const nowSlotMin = Math.floor(nowMin / 10) * 10
   const todaySlots = isToday ? data.day.slots : todayDataAux.day.slots
@@ -123,100 +122,79 @@ function App() {
   const currentLabel = currentSlot?.label ?? ''
   const roomImg = ROOM_MAP[currentLabel] ?? './room.png'
 
-  // 서브 뷰 렌더링
-  if (currentView !== 'scheduler') {
-    const goBack = () => setCurrentView('scheduler')
-    switch (currentView) {
-      case 'pattern-analysis': return <PatternAnalysisView onGoHome={goBack} />
-      case 'habit-tracker': return <HabitTrackerView onGoHome={goBack} />
-      case 'quick-memo': return <QuickMemoView onGoHome={goBack} />
-      case 'settings': return <SettingsView onGoHome={goBack} />
-      default: return <PatternAnalysisView onGoHome={goBack} />
-    }
+  let page: React.ReactNode
+  switch (currentView) {
+    case 'pattern-analysis': page = <PatternAnalysisView />; break
+    case 'habit-tracker': page = <HabitTrackerView />; break
+    case 'quick-memo': page = <QuickMemoView />; break
+    case 'settings': page = <SettingsView />; break
+    default:
+      page = (
+        <div className="sched">
+          <aside className="sched-side">
+            <RoomCard
+              now={now}
+              roomImg={roomImg}
+              currentLabel={currentLabel}
+              currentColor={currentSlot?.color}
+            />
+          </aside>
+
+          <div className="sched-main">
+            <div className="datebar">
+              <button className="datebar-nav" aria-label="이전 날" onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}>‹</button>
+              <button className="datebar-date" onClick={() => setShowCalendar(true)}>
+                <span className="datebar-date-main">{m}월 {d}일</span>
+                <span className="datebar-date-sub">{dayName}요일{isToday ? ' · 오늘' : ''}</span>
+              </button>
+              <button className="datebar-nav" aria-label="다음 날" onClick={() => setSelectedDate(shiftDate(selectedDate, 1))}>›</button>
+              <span className="datebar-spacer" />
+              {!isToday && (
+                <button className="btn-today" onClick={() => setSelectedDate(today)}>오늘로</button>
+              )}
+              <button className="btn-action" onClick={() => setShowCalendar(true)}>달력</button>
+            </div>
+
+            <ActivityPalette
+              activities={data.activities}
+              selectedId={selectedActivityId}
+              onSelect={setSelectedActivityId}
+              onChange={data.setActivities}
+            />
+            <TimeTable
+              day={data.day}
+              rawSlots={data.rawDay.slots}
+              routines={data.routines}
+              selectedActivity={selectedActivity}
+              tickets={kanban.tickets}
+              activities={data.activities}
+              onSlotChange={data.setSlot}
+              onSlotRangeChange={data.setSlotRange}
+              onTicketDrop={handleTicketDropOnSlot}
+              onDeselectActivity={() => setSelectedActivityId(null)}
+            />
+            <KanbanBoard
+              tickets={kanban.tickets}
+              activities={data.activities}
+              addTicket={kanban.addTicket}
+              updateTicket={kanban.updateTicket}
+              deleteTicket={kanban.deleteTicket}
+              moveTicket={kanban.moveTicket}
+              getTicketsByStatus={kanban.getTicketsByStatus}
+            />
+          </div>
+        </div>
+      )
   }
 
   return (
-    <div className={`app ${collapsed ? 'app--collapsed' : ''}`}>
-      <div className="app-layout">
-        <div className="app-left">
-          <div className="app-left-clock">
-            {now.getFullYear()}.{String(now.getMonth() + 1).padStart(2, '0')}.{String(now.getDate()).padStart(2, '0')} {hours}:{minutes}:{seconds}
-          </div>
-          <div className="avatar-area">
-            <div className="avatar-box">
-              <img className="avatar-room" src={roomImg} alt="" />
-            </div>
-          </div>
-          {/* 아이콘 네비게이션 */}
-          <div className="app-left-nav">
-            {NAV_ICONS.map(nav => (
-              <button
-                key={nav.id}
-                className="app-left-nav-btn"
-                data-label={nav.label}
-                onClick={() => setCurrentView(nav.id)}
-              >
-                {nav.icon}
-              </button>
-            ))}
-          </div>
-          <button className="btn-toggle" onClick={toggleCollapse}>
-            {collapsed ? '▶' : '◀'}
-          </button>
-        </div>
-
-        {!collapsed && (
-          <div className="app-right">
-            <div className="app-right-upper">
-              <div className="app-right-dateline">
-                <span className="app-date-label">{m}월 {d}일 {dayName}요일</span>
-                {!isToday && (
-                  <button className="btn-today" onClick={() => setSelectedDate(today)}>
-                    오늘로
-                  </button>
-                )}
-                <span className="app-dateline-spacer" />
-                <button className="btn-action" onClick={() => setShowCalendar(!showCalendar)}>달력</button>
-              </div>
-
-              <ActivityPalette
-                activities={data.activities}
-                selectedId={selectedActivityId}
-                onSelect={setSelectedActivityId}
-                onChange={data.setActivities}
-              />
-              <TimeTable
-                day={data.day}
-                rawSlots={data.rawDay.slots}
-                routines={data.routines}
-                selectedActivity={selectedActivity}
-                tickets={kanban.tickets}
-                activities={data.activities}
-                onSlotChange={data.setSlot}
-                onSlotRangeChange={data.setSlotRange}
-                onTicketDrop={handleTicketDropOnSlot}
-                onDeselectActivity={() => setSelectedActivityId(null)}
-              />
-            </div>
-
-            <div className="app-right-lower">
-              <KanbanBoard
-                tickets={kanban.tickets}
-                activities={data.activities}
-                addTicket={kanban.addTicket}
-                updateTicket={kanban.updateTicket}
-                deleteTicket={kanban.deleteTicket}
-                moveTicket={kanban.moveTicket}
-                getTicketsByStatus={kanban.getTicketsByStatus}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="app">
+      <AppHeader currentView={currentView} onNavigate={setCurrentView} now={now} />
+      <main className="app-content">{page}</main>
 
       {showCalendar && (
         <div className="modal-backdrop" onClick={() => setShowCalendar(false)}>
-          <div className="calendar-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-sheet calendar-modal" onClick={e => e.stopPropagation()}>
             <Calendar
               selectedDate={selectedDate}
               onSelectDate={handleSelectDate}
@@ -225,7 +203,6 @@ function App() {
           </div>
         </div>
       )}
-
     </div>
   )
 }

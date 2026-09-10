@@ -54,8 +54,9 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
   const dragDist = tearDrag ? Math.max(0, tearDrag.currentX - tearDrag.startX) : 0
   const tearProgress = Math.min(1, dragDist / TEAR_THRESHOLD)
 
-  const handleStubMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleStubPointerDown = useCallback((e: React.PointerEvent) => {
     if (!isProgress || tornOff) return
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     e.stopPropagation()
     e.preventDefault()
     tearingRef.current = true
@@ -64,7 +65,7 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
 
   useEffect(() => {
     if (!tearDrag) return
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: PointerEvent) => {
       setTearDrag(prev => prev ? { ...prev, currentX: e.clientX } : null)
     }
     const onUp = () => {
@@ -78,11 +79,13 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
       setTearDrag(null)
       tearingRef.current = false
     }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
     return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
     }
   }, [tearDrag, ticket.id, onTearOff])
 
@@ -160,7 +163,7 @@ export default function KanbanCard({ ticket, ticketNumber, activities, onClick, 
       <div
         className={`cinema-ticket-stub ${isProgress && !tornOff ? 'cinema-ticket-stub--tearable' : ''}`}
         style={{ ...stubDragStyle, backgroundColor: accentColor }}
-        onMouseDown={handleStubMouseDown}
+        onPointerDown={handleStubPointerDown}
       >
         <div className="cinema-ticket-stub-label">#{ticketNumber}</div>
         <div className="cinema-ticket-stub-activity">{activity?.name ?? ''}</div>
