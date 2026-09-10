@@ -3,8 +3,8 @@ import ViewShell from '../components/ViewShell'
 import MiniRoutineTimeTable from '../components/MiniRoutineTimeTable'
 import RoutineAdherence from '../components/RoutineAdherence'
 import HabitChecklist from '../components/HabitChecklist'
-import { useDayData, todayKey } from '../hooks/useDayData'
-import { SLEEP_ACTIVITY } from '../types/schedule'
+import { useActivities, useWeeklyRoutines } from '../hooks/useDayData'
+import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from '../types/schedule'
 import type { Activity, WeeklyRoutines, DayOfWeek, Routine } from '../types/schedule'
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -44,39 +44,29 @@ const DAY_LABELS: { key: DayOfWeek; label: string }[] = [
 ]
 
 export default function HabitTrackerView() {
-  const today = todayKey()
-  const data = useDayData(today)
+  const [activities] = useActivities()
+  const [weekly, setWeekly] = useWeeklyRoutines()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const selectedActivity: Activity | null = selectedId === '__sleep__'
+  const selectedActivity: Activity | null = selectedId === SLEEP_ACTIVITY.id
     ? SLEEP_ACTIVITY
-    : selectedId === 'eraser'
-    ? { id: 'eraser', name: '지우개', color: '#ff3b30', order: -1 }
-    : data.activities.find(a => a.id === selectedId) ?? null
+    : selectedId === ERASER_ACTIVITY.id
+    ? ERASER_ACTIVITY
+    : activities.find(a => a.id === selectedId) ?? null
 
   const updateDay = (key: keyof WeeklyRoutines, routines: Routine[]) => {
-    data.setWeekly({ ...data.weekly, [key]: routines })
+    setWeekly({ ...weekly, [key]: routines })
   }
 
-  const applyWeekday = () => {
-    if (!confirm('평일 템플릿을 월~금에 일괄 적용하시겠습니까?\n(기존 월~금 루틴은 덮어씌워집니다)')) return
-    const src = data.weekly.weekday
-    const copy = (): Routine[] => src.map(r => ({ ...r }))
-    data.setWeekly({
-      ...data.weekly,
-      mon: copy(), tue: copy(), wed: copy(), thu: copy(), fri: copy(),
-    })
+  const applyTemplate = (from: 'weekday' | 'weekend', to: DayOfWeek[], label: string) => {
+    if (!confirm(`${label} 템플릿을 일괄 적용하시겠습니까?\n(기존 루틴은 덮어씌워집니다)`)) return
+    const src = weekly[from]
+    const next = { ...weekly }
+    for (const d of to) next[d] = src.map(r => ({ ...r }))
+    setWeekly(next)
   }
-
-  const applyWeekend = () => {
-    if (!confirm('주말 템플릿을 토~일에 일괄 적용하시겠습니까?\n(기존 토~일 루틴은 덮어씌워집니다)')) return
-    const src = data.weekly.weekend
-    const copy = (): Routine[] => src.map(r => ({ ...r }))
-    data.setWeekly({
-      ...data.weekly,
-      sat: copy(), sun: copy(),
-    })
-  }
+  const applyWeekday = () => applyTemplate('weekday', ['mon', 'tue', 'wed', 'thu', 'fri'], '평일(월~금)')
+  const applyWeekend = () => applyTemplate('weekend', ['sat', 'sun'], '주말(토~일)')
 
   return (
     <ViewShell title="습관 트래커">
@@ -90,7 +80,7 @@ export default function HabitTrackerView() {
           >
             {SLEEP_ACTIVITY.name}
           </button>
-          {data.activities.map(a => (
+          {activities.map(a => (
             <button
               key={a.id}
               className={`palette-chip ${selectedId === a.id ? 'palette-chip--selected' : ''}`}
@@ -130,13 +120,13 @@ export default function HabitTrackerView() {
           {/* 템플릿 2개 */}
           <RoutineRow
             title="평일" subtitle="템플릿"
-            routines={data.weekly.weekday} selectedActivity={selectedActivity}
+            routines={weekly.weekday} selectedActivity={selectedActivity}
             onChange={(r) => updateDay('weekday', r)}
             actionLabel="월~금 적용" onAction={applyWeekday}
           />
           <RoutineRow
             title="주말" subtitle="템플릿"
-            routines={data.weekly.weekend} selectedActivity={selectedActivity}
+            routines={weekly.weekend} selectedActivity={selectedActivity}
             onChange={(r) => updateDay('weekend', r)}
             actionLabel="토~일 적용" onAction={applyWeekend}
           />
@@ -148,7 +138,7 @@ export default function HabitTrackerView() {
             <RoutineRow
               key={d.key}
               title={d.label}
-              routines={data.weekly[d.key]}
+              routines={weekly[d.key]}
               selectedActivity={selectedActivity}
               onChange={(r) => updateDay(d.key, r)}
             />
@@ -162,7 +152,7 @@ export default function HabitTrackerView() {
           {/* 루틴 이행률 */}
           <div className="habit-section">
             <h3 className="habit-section-title">루틴 이행률</h3>
-            <RoutineAdherence weekly={data.weekly} />
+            <RoutineAdherence weekly={weekly} />
           </div>
 
           {/* 체크리스트 습관 */}

@@ -1361,6 +1361,7 @@ button:focus:not(:focus-visible) { outline: none; }
 .adherence-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); }
 .adherence-overall { font-size: 11px; color: var(--text-muted); }
 .adherence-overall strong { color: var(--accent); font-size: 14px; }
+.adherence-loading { font-size: 11px; color: var(--text-muted); padding: 8px 0; }
 .adherence-bars { display: flex; flex-direction: column; gap: 4px; }
 .adherence-bar-row { display: flex; align-items: center; gap: 8px; }
 .adherence-day {

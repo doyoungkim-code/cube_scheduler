@@ -4,6 +4,7 @@ import type { Ticket } from '../types/kanban'
 import { activityFieldsForName } from '../types/kanban'
 import TicketModal from './TicketModal'
 import { TOTAL_MIN, fmtMin, fmtDuration, groupAllSlots, buildRoutineMap, type TaskGroup } from '../lib/slots'
+import { useNowMinute } from '../hooks/useNow'
 
 const PX_PER_10MIN = 10
 const TRACK_H = (TOTAL_MIN / 10) * PX_PER_10MIN
@@ -41,11 +42,7 @@ export default function TimelineVertical({
     return () => io.disconnect()
   }, [])
 
-  const [nowMin, setNowMin] = useState(() => { const d = new Date(); return d.getHours() * 60 + d.getMinutes() })
-  useEffect(() => {
-    const t = setInterval(() => { const d = new Date(); setNowMin(d.getHours() * 60 + d.getMinutes()) }, 30000)
-    return () => clearInterval(t)
-  }, [])
+  const nowMin = useNowMinute()
 
   const scrollToNow = useCallback((smooth = true) => {
     const el = trackRef.current

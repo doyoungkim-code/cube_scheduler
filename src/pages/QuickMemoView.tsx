@@ -1,34 +1,31 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import ViewShell from '../components/ViewShell'
-import QuickMemo, { type MemoDoc } from '../components/QuickMemo'
-import { storage } from '../lib/storage'
+import QuickMemo from '../components/QuickMemo'
+import { useDocs, useKeysWithPrefix } from '../store'
+import type { MemoDoc } from '../hooks/useMemoDoc'
 import { dateKeyOf, shiftDateKey, parseDateKey } from '../lib/slots'
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
+const RECENT_LIMIT = 30
 
 interface MemoItem { key: string; text: string; updatedAt: string }
 
 export default function QuickMemoView() {
   const today = dateKeyOf(new Date())
   const [dateKey, setDateKey] = useState(today)
-  const [items, setItems] = useState<MemoItem[]>([])
 
-  // 최근 메모 목록 (편집 중인 날짜가 바뀌거나 저장될 때 갱신)
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const keys = (await storage.listKeys('memo-')).sort().reverse().slice(0, 30)
-      const out: MemoItem[] = []
-      for (const k of keys) {
-        const doc = await storage.loadData(k) as MemoDoc | null
-        if (doc?.text?.trim()) out.push({ key: k.replace('memo-', ''), text: doc.text, updatedAt: doc.updatedAt })
-      }
-      if (!cancelled) setItems(out)
-    }
-    load()
-    const t = setInterval(load, 3000)
-    return () => { cancelled = true; clearInterval(t) }
-  }, [dateKey])
+  // 최근 메모 목록: 스토어가 바뀌면 자동 갱신 (폴링 없음)
+  const memoKeys = useKeysWithPrefix('memo-')
+  const recentKeys = useMemo(() => [...memoKeys].reverse().slice(0, RECENT_LIMIT), [memoKeys])
+  const docs = useDocs<MemoDoc>(recentKeys)
+  const items = useMemo(() => {
+    const out: MemoItem[] = []
+    recentKeys.forEach((k, i) => {
+      const doc = docs[i]
+      if (doc?.text?.trim()) out.push({ key: k.slice('memo-'.length), text: doc.text, updatedAt: doc.updatedAt })
+    })
+    return out
+  }, [recentKeys, docs])
 
   const d = parseDateKey(dateKey)
 

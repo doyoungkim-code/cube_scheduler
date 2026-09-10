@@ -3,6 +3,7 @@ import ViewShell from '../components/ViewShell'
 import { useAuth } from '../auth/AuthContext'
 import AdminPanel from '../auth/AdminPanel'
 import { storage } from '../lib/storage'
+import { writeDoc } from '../store'
 
 const EXPORT_MARKER = '__scheduler_export__'
 const KEY_PREFIXES = ['day-', 'routines', 'activities', 'habits', 'habit-checks-', 'tickets', 'memo-']
@@ -54,7 +55,7 @@ export default function SettingsView() {
       if (parsed && typeof parsed === 'object' && EXPORT_MARKER in (parsed as object)) {
         const data = (parsed as { data: Record<string, unknown> }).data ?? {}
         for (const [k, v] of Object.entries(data)) {
-          await storage.saveData(k, v)
+          writeDoc(k, v)   // 스토어 + 저장소에 동시에 반영 → 화면 즉시 갱신
           count++
         }
         continue
@@ -62,11 +63,11 @@ export default function SettingsView() {
       // 2) 예전 Electron 버전의 개별 파일 (예: day-2026-03-23.json, tickets.json)
       const key = file.name.replace(/\.json$/, '')
       if (!KEY_PREFIXES.some(p => key.startsWith(p))) { skipped++; continue }
-      await storage.saveData(key, parsed)
+      writeDoc(key, parsed)
       count++
     }
     await storage.flush()
-    setMsg(`${count}개 항목을 가져왔습니다.${skipped ? ` (${skipped}개 파일 건너뜀)` : ''} 화면을 새로고침하면 반영됩니다.`)
+    setMsg(`${count}개 항목을 가져왔습니다.${skipped ? ` (${skipped}개 파일 건너뜀)` : ''}`)
     if (fileRef.current) fileRef.current.value = ''
   }
 

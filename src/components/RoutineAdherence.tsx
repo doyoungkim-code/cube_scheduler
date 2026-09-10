@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { DayData, WeeklyRoutines, DayOfWeek } from '../types/schedule'
 import { dayKeyFromDate } from '../types/schedule'
-import { storage } from '../lib/storage'
+import { useDocs } from '../store'
+import { dateKeyOf, parseDateKey, shiftDateKey } from '../lib/slots'
+import { dayDocKey } from '../hooks/useDayData'
 
 interface Props {
   weekly: WeeklyRoutines
@@ -19,71 +21,56 @@ const DAY_LABELS: { key: DayOfWeek; label: string }[] = [
   { key: 'thu', label: '목' }, { key: 'fri', label: '금' }, { key: 'sat', label: '토' }, { key: 'sun', label: '일' },
 ]
 
-function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+const WINDOW_DAYS = 28
 
 export default function RoutineAdherence({ weekly }: Props) {
-  const [stats, setStats] = useState<DayStat[]>([])
-  const [overall, setOverall] = useState<number>(0)
-  const [loading, setLoading] = useState(true)
+  const today = dateKeyOf(new Date())
+  const dateKeys = useMemo(
+    () => Array.from({ length: WINDOW_DAYS }, (_, i) => shiftDateKey(today, -i)),
+    [today],
+  )
+  const docs = useDocs<DayData>(useMemo(() => dateKeys.map(dayDocKey), [dateKeys]))
+  const loading = docs.some(d => d === undefined)
 
-  useEffect(() => {
-    async function load() {
-      // 지난 28일 집계
-      const dayMap = new Map<DayOfWeek, { match: number; total: number; samples: Set<string> }>()
-      for (const d of DAY_LABELS) {
-        dayMap.set(d.key, { match: 0, total: 0, samples: new Set() })
-      }
+  const { stats, overall } = useMemo(() => {
+    const dayMap = new Map<DayOfWeek, { match: number; total: number; samples: Set<string> }>()
+    for (const d of DAY_LABELS) dayMap.set(d.key, { match: 0, total: 0, samples: new Set() })
 
-      const now = new Date()
-      for (let i = 0; i < 28; i++) {
-        const date = new Date(now)
-        date.setDate(now.getDate() - i)
-        const dk = dateKey(date)
-        const dayOfWeek = dayKeyFromDate(date)
-        const routines = weekly[dayOfWeek]
-        if (routines.length === 0) continue
+    dateKeys.forEach((dk, i) => {
+      const dayOfWeek = dayKeyFromDate(parseDateKey(dk))
+      const routines = weekly[dayOfWeek] ?? []
+      if (routines.length === 0) return
+      const saved = docs[i]
+      if (!saved?.slots) return
 
-        const saved = await storage.loadData(`day-${dk}`) as DayData | null
-        if (!saved?.slots) continue
-
-        // 루틴 슬롯 계산
-        let totalRoutineSlots = 0
-        let matchedSlots = 0
-        for (const r of routines) {
-          for (let m = r.startMin; m < r.endMin; m += 10) {
-            totalRoutineSlots++
-            const slot = saved.slots[m]
-            if (slot && slot.label === r.name) matchedSlots++
-          }
+      let total = 0
+      let matched = 0
+      for (const r of routines) {
+        for (let m = r.startMin; m < r.endMin; m += 10) {
+          total++
+          const slot = saved.slots[m]
+          if (slot && slot.label === r.name) matched++
         }
-
-        const entry = dayMap.get(dayOfWeek)!
-        entry.match += matchedSlots
-        entry.total += totalRoutineSlots
-        entry.samples.add(dk)
       }
+      const entry = dayMap.get(dayOfWeek)!
+      entry.match += matched
+      entry.total += total
+      entry.samples.add(dk)
+    })
 
-      const result: DayStat[] = DAY_LABELS.map(d => {
-        const e = dayMap.get(d.key)!
-        return {
-          key: d.key,
-          label: d.label,
-          rate: e.total > 0 ? Math.round((e.match / e.total) * 100) : 0,
-          samples: e.samples.size,
-        }
-      })
-      setStats(result)
-
-      let totalMatch = 0, totalSlots = 0
-      for (const e of dayMap.values()) { totalMatch += e.match; totalSlots += e.total }
-      setOverall(totalSlots > 0 ? Math.round((totalMatch / totalSlots) * 100) : 0)
-      setLoading(false)
-    }
-    setLoading(true)
-    load()
-  }, [weekly])
+    const stats: DayStat[] = DAY_LABELS.map(d => {
+      const e = dayMap.get(d.key)!
+      return {
+        key: d.key,
+        label: d.label,
+        rate: e.total > 0 ? Math.round((e.match / e.total) * 100) : 0,
+        samples: e.samples.size,
+      }
+    })
+    let totalMatch = 0, totalSlots = 0
+    for (const e of dayMap.values()) { totalMatch += e.match; totalSlots += e.total }
+    return { stats, overall: totalSlots > 0 ? Math.round((totalMatch / totalSlots) * 100) : 0 }
+  }, [dateKeys, docs, weekly])
 
   return (
     <div className="adherence">
@@ -91,7 +78,7 @@ export default function RoutineAdherence({ weekly }: Props) {
         <span className="adherence-title">요일별 이행률</span>
         <span className="adherence-overall">지난 4주 평균 <strong>{overall}%</strong></span>
       </div>
-      {loading ? <div style={{ fontSize: 11, color: '#8a7a74', padding: '8px 0' }}>로딩 중...</div> : null}
+      {loading ? <div className="adherence-loading">로딩 중...</div> : null}
       <div className="adherence-bars" style={loading ? { opacity: 0.3 } : undefined}>
         {stats.map(s => (
           <div key={s.key} className="adherence-bar-row">

@@ -17,7 +17,7 @@
 - **현재 시간대 / 시간 상세**: 지금 시각이 속한 시간대의 기록을 카드로 보여 준다. 블록을 클릭하면 그 시간의 상세 패널이 열리고, 카드를 누르면 제목·내용·활동별 세부 항목(운동 종류/거리/시간, 알고리즘 문제번호/풀이시간/링크)을 적을 수 있다.
 - **활동 팔레트**: 활동 이름과 색을 자유롭게 추가·편집. 현재 활동에 따라 왼쪽 방 이미지가 바뀐다 (알고리즘, 프로젝트, 운동, 식사, 영어 공부, 수면 등).
 - **날짜 이동**: 화살표로 하루씩, 달력으로 원하는 날짜로. 기록이 있는 날은 달력에 점이 찍힌다.
-- **실행 취소**: Ctrl+Z (최근 20단계).
+- **실행 취소**: Ctrl+Z (최근 50단계). 슬롯뿐 아니라 루틴·팔레트·티켓·습관 편집도 되돌린다.
 
 ### 칸반 보드
 - To Do / Progress / Done 세 컬럼. 티켓에는 제목, 상세, 왜 하는지(Why), 활동 유형, 활동별 세부 항목이 들어간다.
@@ -67,7 +67,7 @@ Firebase 프로젝트 만들기, 보안 규칙 게시, GitHub Pages 배포, 사�
 | 데이터 | Cloud Firestore, 오프라인 캐시(IndexedDB) |
 | 배포 | GitHub Pages, GitHub Actions (`main` push 시 자동) |
 
-외부 라이브러리는 `firebase`, `uuid` 두 개뿐이다.
+외부 라이브러리는 `firebase`, `uuid`, `zustand` 세 개뿐이다.
 
 ## 프로젝트 구조
 
@@ -113,9 +113,14 @@ cube_scheduler/
 │   │   ├── HabitTrackerView.tsx     # 습관
 │   │   ├── QuickMemoView.tsx        # 메모 (편집기 + 최근 목록)
 │   │   └── SettingsView.tsx         # 설정
+│   ├── store/
+│   │   └── index.ts               # Zustand 문서 캐시: useDoc / useDocs / writeDoc / undo, storage 구독
 │   ├── hooks/
-│   │   ├── useDayData.ts          # 날짜별 데이터, 루틴 병합, 자동 저장, 실행 취소
-│   │   ├── useKanbanData.ts       # 칸반 티켓 CRUD, 자동 저장
+│   │   ├── useDayData.ts          # 날짜별 데이터 + 루틴 병합, 활동 팔레트, 요일별 루틴
+│   │   ├── useKanbanData.ts       # 칸반 티켓 CRUD
+│   │   ├── useHabits.ts           # 습관 목록, 날짜별 체크, 스트릭
+│   │   ├── useMemoDoc.ts          # 날짜별 메모
+│   │   ├── useNow.ts              # 현재 시각 (초 / 분 단위)
 │   │   └── useMediaQuery.ts       # 반응형 분기 (모바일 / 넓은 화면)
 │   ├── types/                     # schedule.ts, kanban.ts, navigation.ts
 │   └── styles/global.css
@@ -130,15 +135,19 @@ cube_scheduler/
 ### 데이터 흐름
 
 ```
-컴포넌트 / 훅
-  ↓ storage.loadData(key) / saveData(key, data) / listKeys(prefix)
+컴포넌트
+  ↓ useDoc(key) / useDocs(keys) / writeDoc(key, data)      (src/store)
+Zustand 문서 캐시  docs: { key → JSON }
+  ↓ storage.loadData / saveData            ↑ storage.subscribe (다른 기기·탭의 변경)
 현재 StorageBackend  (src/lib/storage.ts)
   ├─ LocalStorageBackend  : 로그인 전, 또는 Firebase 미설정
   └─ FirestoreBackend     : 로그인 + 승인 후 → users/{uid}/store/{key}
 ```
 
 - 모든 데이터는 **키-값 JSON** 이다. Firestore에서는 문서의 `json` 필드에 문자열로 저장한다.
-- `FirestoreBackend` 는 사용자의 `store` 컬렉션 전체를 실시간 구독해 메모리에 들고 있으므로 다른 기기에서 고친 내용도 바로 반영된다. 저장은 키별로 600ms 디바운스 후 기록하고, 탭을 벗어나거나 닫을 때 즉시 flush 한다.
+- 화면 상태는 **스토어 한 벌**이다. 같은 키를 보는 컴포넌트가 몇 개든(홈의 습관 위젯과 습관 페이지 등) 같은 값을 보고, 한 곳의 편집이 즉시 다른 곳에 반영된다.
+- `FirestoreBackend` 는 사용자의 `store` 컬렉션 전체를 실시간 구독한다. 다른 기기에서 고친 내용은 `storage.subscribe` 를 통해 스토어에 들어와 **새로고침 없이** 화면에 반영된다. 저장은 키별로 600ms 디바운스 후 기록하고, 탭을 벗어나거나 닫을 때 즉시 flush 하며, 실패하면 5초 뒤 재시도한다.
+- 실행 취소(Ctrl+Z)는 "키의 이전 값"을 되돌리는 방식이라 슬롯·루틴·팔레트·티켓·습관 모두에 적용된다.
 - 오프라인이면 Firestore 로컬 캐시에 쌓였다가 재접속 시 동기화된다.
 
 | 키 | 내용 |

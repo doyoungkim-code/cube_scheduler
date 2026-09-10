@@ -5,13 +5,13 @@ import { activityFieldsForName } from '../types/kanban'
 import TicketModal from './TicketModal'
 import HourDetail from './HourDetail'
 import { TOTAL_MIN, fmtMin, groupAllSlots, type TaskGroup } from '../lib/slots'
+import { useNowMinute } from '../hooks/useNow'
 
 interface TimeTableProps {
   day: DayData
   rawSlots: Record<number, TimeSlot>
   routines: Routine[]
   selectedActivity: Activity | null
-  tickets: Ticket[]
   activities: Activity[]
   onSlotChange: (min: number, slot: TimeSlot | null) => void
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
@@ -49,19 +49,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
   // 페인트 드래그 상태
   const [paintDrag, setPaintDrag] = useState<{ startMin: number; currentMin: number } | null>(null)
 
-  // 현재 시각
-  const [nowMin, setNowMin] = useState(() => {
-    const d = new Date()
-    return d.getHours() * 60 + d.getMinutes()
-  })
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const d = new Date()
-      setNowMin(d.getHours() * 60 + d.getMinutes())
-    }, 30000)
-    return () => clearInterval(timer)
-  }, [])
+  const nowMin = useNowMinute()
 
   const minFromMouse = useCallback((clientX: number): number => {
     if (!blocksRef.current) return 0
@@ -137,7 +125,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('pointercancel', onUp)
     }
-  }, [paintDrag, selectedActivity, shiftExtend, minFromMouse, onSlotRangeChange])
+  }, [paintDrag, selectedActivity, shiftExtend, minFromMouse, onSlotRangeChange, onDeselectActivity])
 
   // 비드래그 상태 블록 클릭
   const handleBlockClick = (slotMin: number) => {

@@ -1,15 +1,17 @@
+import { useNow } from '../hooks/useNow'
+import { pad2 } from '../lib/slots'
+
 interface Props {
-  now: Date
   roomImg: string
   currentLabel: string
   currentColor?: string
 }
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
-function pad(n: number) { return String(n).padStart(2, '0') }
 
-/** 현재 활동에 따라 바뀌는 방 이미지 + 시계 카드 */
-export default function RoomCard({ now, roomImg, currentLabel, currentColor }: Props) {
+/** 현재 활동에 따라 바뀌는 방 이미지 + 시계 카드. 초 단위 시계는 이 컴포넌트만 리렌더한다. */
+export default function RoomCard({ roomImg, currentLabel, currentColor }: Props) {
+  const now = useNow(1000)
   return (
     <section className="room-card">
       <div className="room-card-img-wrap">
@@ -17,11 +19,11 @@ export default function RoomCard({ now, roomImg, currentLabel, currentColor }: P
       </div>
       <div className="room-card-info">
         <div className="room-card-clock">
-          {pad(now.getHours())}:{pad(now.getMinutes())}
-          <span className="room-card-sec">:{pad(now.getSeconds())}</span>
+          {pad2(now.getHours())}:{pad2(now.getMinutes())}
+          <span className="room-card-sec">:{pad2(now.getSeconds())}</span>
         </div>
         <div className="room-card-date">
-          {now.getFullYear()}.{pad(now.getMonth() + 1)}.{pad(now.getDate())} {DAY_NAMES[now.getDay()]}
+          {now.getFullYear()}.{pad2(now.getMonth() + 1)}.{pad2(now.getDate())} {DAY_NAMES[now.getDay()]}
         </div>
         <div className="room-card-activity">
           {currentLabel

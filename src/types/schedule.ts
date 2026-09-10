@@ -62,6 +62,14 @@ export const SLEEP_ACTIVITY: Activity = {
   order: -1,
 }
 
+/** 팔레트의 지우개. 선택하면 드래그한 구간이 지워진다. */
+export const ERASER_ACTIVITY: Activity = {
+  id: 'eraser',
+  name: '지우개',
+  color: '#ff3b30',
+  order: -1,
+}
+
 export interface DayData {
   date: string
   goal: string

@@ -1,96 +1,20 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { storage } from '../lib/storage'
-
-interface Habit {
-  id: string
-  name: string
-  color: string
-  order: number
-  createdAt: string
-}
-
-interface HabitCheck {
-  habitIds: string[]
-}
+import { useHabits, useHabitChecks, useHabitStreaks, todayHabitKey, type Habit } from '../hooks/useHabits'
 
 const COLORS = ['#4a9eff', '#34c759', '#ff9500', '#ff3b30', '#af52de', '#5ac8fa', '#ffcc00', '#30b0c7']
 
-function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 export default function HabitChecklist() {
-  const [habits, setHabits] = useState<Habit[]>([])
-  const [todayChecks, setTodayChecks] = useState<string[]>([])
-  const [streaks, setStreaks] = useState<Record<string, number>>({})
-  const [loaded, setLoaded] = useState(false)
+  const today = todayHabitKey()
+  const [habits, saveHabits] = useHabits()
+  const [todayChecks, saveTodayChecks] = useHabitChecks(today)
+  const streaks = useHabitStreaks(habits, today)
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
 
-  const today = dateKey(new Date())
-
-  // 초기 로드
-  useEffect(() => {
-    async function load() {
-      const savedHabits = await storage.loadData('habits') as Habit[] | null
-      if (savedHabits) setHabits(savedHabits)
-      const todayCheck = await storage.loadData(`habit-checks-${today}`) as HabitCheck | null
-      if (todayCheck) setTodayChecks(todayCheck.habitIds)
-      setLoaded(true)
-    }
-    load()
-  }, [today])
-
-  // 스트릭 계산 (최적화: 날짜별로 한 번만 로드, 최대 60일)
-  useEffect(() => {
-    if (!loaded || habits.length === 0) return
-    let cancelled = false
-    async function compute() {
-      // 날짜별 체크 데이터를 한번에 로드 (최대 60일)
-      const checkMap = new Map<string, string[]>()
-      for (let i = 0; i < 60; i++) {
-        const d = new Date()
-        d.setDate(d.getDate() - i)
-        const dk = dateKey(d)
-        const check = await storage.loadData(`habit-checks-${dk}`) as HabitCheck | null
-        if (cancelled) return
-        checkMap.set(dk, check?.habitIds ?? [])
-      }
-
-      const result: Record<string, number> = {}
-      for (const h of habits) {
-        let count = 0
-        for (let i = 0; i < 60; i++) {
-          const d = new Date()
-          d.setDate(d.getDate() - i)
-          const dk = dateKey(d)
-          const ids = checkMap.get(dk) ?? []
-          if (ids.includes(h.id)) { count++ }
-          else if (i === 0) { continue }
-          else { break }
-        }
-        result[h.id] = count
-      }
-      if (!cancelled) setStreaks(result)
-    }
-    compute()
-    return () => { cancelled = true }
-  }, [habits, loaded, todayChecks])
-
-  const saveHabits = useCallback((next: Habit[]) => {
-    setHabits(next)
-    storage.saveData('habits', next)
-  }, [])
-
-  const saveTodayChecks = useCallback((next: string[]) => {
-    setTodayChecks(next)
-    storage.saveData(`habit-checks-${today}`, { habitIds: next })
-  }, [today])
-
   const toggleCheck = (id: string) => {
     saveTodayChecks(
-      todayChecks.includes(id) ? todayChecks.filter(x => x !== id) : [...todayChecks, id]
+      todayChecks.includes(id) ? todayChecks.filter(x => x !== id) : [...todayChecks, id],
     )
   }
 
@@ -132,13 +56,15 @@ export default function HabitChecklist() {
               <button
                 className="habits-check"
                 onClick={() => toggleCheck(h.id)}
+                aria-pressed={checked}
+                aria-label={`${h.name} 체크`}
                 style={{ borderColor: h.color, background: checked ? h.color : 'transparent' }}
               >
                 {checked && '✓'}
               </button>
               <span className="habits-name">{h.name}</span>
               {streak > 0 && <span className="habits-streak">🔥 {streak}</span>}
-              <button className="habits-delete" onClick={() => deleteHabit(h.id)} title="삭제">✕</button>
+              <button className="habits-delete" onClick={() => deleteHabit(h.id)} title="삭제" aria-label={`${h.name} 삭제`}>✕</button>
             </div>
           )
         })}

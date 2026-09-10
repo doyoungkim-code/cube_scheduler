@@ -10,11 +10,13 @@ import TodaySummary from './components/TodaySummary'
 import WeekStrip from './components/WeekStrip'
 import QuickMemo from './components/QuickMemo'
 import HabitChecklist from './components/HabitChecklist'
-import { useDayData } from './hooks/useDayData'
+import { useDayData, dayDocKey } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
 import { useMediaQuery, MQ_MOBILE, MQ_WIDE } from './hooks/useMediaQuery'
-import { dateKeyOf, shiftDateKey } from './lib/slots'
-import { SLEEP_ACTIVITY } from './types/schedule'
+import { useNowMinute } from './hooks/useNow'
+import { useDoc, undoLast } from './store'
+import { dateKeyOf, shiftDateKey, parseDateKey } from './lib/slots'
+import { SLEEP_ACTIVITY, ERASER_ACTIVITY, type DayData } from './types/schedule'
 import type { ViewId } from './types/navigation'
 import PatternAnalysisView from './pages/PatternAnalysisView'
 import HabitTrackerView from './pages/HabitTrackerView'
@@ -36,54 +38,55 @@ const ROOM_MAP: Record<string, string> = {
   '수면': './room_sleep.png',
 }
 
+/** Ctrl+Z 가 동작하는 뷰 (편집 화면만) */
+const UNDO_VIEWS: ReadonlySet<ViewId> = new Set<ViewId>(['scheduler', 'habit-tracker'])
+
 function App() {
   const [currentView, setCurrentView] = useState<ViewId>('scheduler')
-  const [now, setNow] = useState(new Date())
-  const today = dateKeyOf(now)
+  const nowMin = useNowMinute()                 // 분 단위로만 리렌더
+  const today = dateKeyOf(new Date())
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
-  const todayDataAux = useDayData(selectedDate === today ? '__unused__' : today)
+  const todayDoc = useDoc<DayData>(dayDocKey(today))   // 방 카드용 "지금 하는 일" (선택 날짜와 무관)
   const kanban = useKanbanData()
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
   const isMobile = useMediaQuery(MQ_MOBILE)
   const isWide = useMediaQuery(MQ_WIDE)
 
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(t)
-  }, [])
-
-  // 글로벌 키보드: Escape(달력닫기), Ctrl+Z(실행취소)
+  // 글로벌 키보드: Escape(달력닫기), Ctrl+Z(실행취소 — 편집 뷰에서만)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setShowCalendar(false)
       if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        if (!UNDO_VIEWS.has(currentView)) return
         const tag = (e.target as HTMLElement | null)?.tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA') return
         e.preventDefault()
-        data.undo()
+        undoLast()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [data.undo])
+  }, [currentView])
 
   // 뷰 전환 시 스크롤 맨 위로
   useEffect(() => { window.scrollTo({ top: 0 }) }, [currentView])
 
   const isToday = selectedDate === today
 
-  const selectedActivity = selectedActivityId === '__sleep__'
+  const selectedActivity = selectedActivityId === SLEEP_ACTIVITY.id
     ? SLEEP_ACTIVITY
-    : selectedActivityId === 'eraser'
-    ? { id: 'eraser', name: '지우개', color: '#ff3b30', order: -1 }
+    : selectedActivityId === ERASER_ACTIVITY.id
+    ? ERASER_ACTIVITY
     : data.activities.find(a => a.id === selectedActivityId) ?? null
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date)
     setShowCalendar(false)
   }
+
+  const deselectActivity = useCallback(() => setSelectedActivityId(null), [])
 
   const handleTicketDropOnSlot = useCallback((ticketId: string, slotMin: number) => {
     const ticket = kanban.getTicket(ticketId)
@@ -98,25 +101,26 @@ function App() {
     while (start > 0 && data.day.slots[start - 10]?.label === activity.name) start -= 10
     let end = slotMin + 10
     while (end < 1440 && data.day.slots[end]?.label === activity.name) end += 10
-    // 티켓 내용을 슬롯 record에 복사 (칸반에는 영향 없음)
+    // 티켓 내용을 슬롯 record에 복사 (칸반에는 영향 없음). undo 1단계.
     const record = {
       title: ticket.title,
       description: ticket.description,
       activityFields: ticket.activityFields,
     }
-    for (let m = start; m < end; m += 10) {
-      const s = data.day.slots[m]
-      if (s) data.setSlot(m, { ...s, detail: ticket.description, record })
-    }
+    data.updateSlots(slots => {
+      for (let m = start; m < end; m += 10) {
+        const s = slots[m]
+        if (s) slots[m] = { ...s, detail: ticket.description, record }
+      }
+      return slots
+    })
   }, [kanban, data])
 
-  const [y, m, d] = selectedDate.split('-').map(Number)
-  const dateObj = new Date(y, m - 1, d)
+  const dateObj = parseDateKey(selectedDate)
   const dayName = DAY_NAMES[dateObj.getDay()]
 
-  const nowMin = now.getHours() * 60 + now.getMinutes()
   const nowSlotMin = Math.floor(nowMin / 10) * 10
-  const todaySlots = isToday ? data.day.slots : todayDataAux.day.slots
+  const todaySlots = isToday ? data.day.slots : (todayDoc?.slots ?? {})
   const currentSlot = todaySlots[nowSlotMin]
   const currentLabel = currentSlot?.label ?? ''
   const roomImg = ROOM_MAP[currentLabel] ?? './room.png'
@@ -133,7 +137,7 @@ function App() {
           <div className="datebar">
             <button className="datebar-nav" aria-label="이전 날" onClick={() => setSelectedDate(shiftDateKey(selectedDate, -1))}>‹</button>
             <button className="datebar-date" onClick={() => setShowCalendar(true)}>
-              <span className="datebar-date-main">{m}월 {d}일</span>
+              <span className="datebar-date-main">{dateObj.getMonth() + 1}월 {dateObj.getDate()}일</span>
               <span className="datebar-date-sub">{dayName}요일{isToday ? ' · 오늘' : ''}</span>
             </button>
             <button className="datebar-nav" aria-label="다음 날" onClick={() => setSelectedDate(shiftDateKey(selectedDate, 1))}>›</button>
@@ -169,7 +173,7 @@ function App() {
             activities={data.activities}
             onSlotChange={data.setSlot}
             onSlotRangeChange={data.setSlotRange}
-            onDeselectActivity={() => setSelectedActivityId(null)}
+            onDeselectActivity={deselectActivity}
           />
         ) : (
           <TimeTable
@@ -177,12 +181,11 @@ function App() {
             rawSlots={data.rawDay.slots}
             routines={data.routines}
             selectedActivity={selectedActivity}
-            tickets={kanban.tickets}
             activities={data.activities}
             onSlotChange={data.setSlot}
             onSlotRangeChange={data.setSlotRange}
             onTicketDrop={handleTicketDropOnSlot}
-            onDeselectActivity={() => setSelectedActivityId(null)}
+            onDeselectActivity={deselectActivity}
           />
         )
         const board = (
@@ -198,7 +201,7 @@ function App() {
           />
         )
         const roomCard = (
-          <RoomCard now={now} roomImg={roomImg} currentLabel={currentLabel} currentColor={currentSlot?.color} />
+          <RoomCard roomImg={roomImg} currentLabel={currentLabel} currentColor={currentSlot?.color} />
         )
         const memo = <QuickMemo key={selectedDate} dateKey={selectedDate} />
 
@@ -236,7 +239,7 @@ function App() {
 
   return (
     <div className="app">
-      <AppHeader currentView={currentView} onNavigate={setCurrentView} now={now} />
+      <AppHeader currentView={currentView} onNavigate={setCurrentView} />
       <main className="app-content">{page}</main>
 
       {showCalendar && (

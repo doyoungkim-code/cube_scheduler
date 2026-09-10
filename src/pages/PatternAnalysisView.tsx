@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import ViewShell from '../components/ViewShell'
-import { useDayData, todayKey } from '../hooks/useDayData'
+import { useDayData, todayKey, dayDocKey } from '../hooks/useDayData'
+import { useDocs } from '../store'
+import { weekOf } from '../lib/slots'
 import type { DayData, TimeSlot } from '../types/schedule'
-import { storage } from '../lib/storage'
 
 const DAY_NAMES_FULL = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
 const DAY_NAMES_SHORT = ['월', '화', '수', '목', '금', '토', '일']
@@ -27,10 +28,6 @@ function groupSlotRecords(slots: Record<number, TimeSlot>): RecordGroup[] {
   }
   if (cur) groups.push(cur)
   return groups
-}
-
-function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function fmtTime(mins: number): string {
@@ -365,35 +362,18 @@ export default function PatternAnalysisView() {
   const today = todayKey()
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
-  const reportRef = useRef<HTMLDivElement>(null)
 
-  const [weekData, setWeekData] = useState<{ date: string; stats: RecordGroup[]; total: number; slots: Record<number, TimeSlot> }[]>([])
-
-  useEffect(() => {
-    if (mode !== 'week') return
-    async function load() {
-      const sel = new Date(selectedDate + 'T00:00:00')
-      const dayOfWeek = sel.getDay()
-      const monday = new Date(sel)
-      monday.setDate(sel.getDate() - ((dayOfWeek + 6) % 7))
-
-      const results: typeof weekData = []
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(monday)
-        d.setDate(monday.getDate() + i)
-        const dk = dateKey(d)
-        const saved = await storage.loadData(`day-${dk}`) as DayData | null
-        if (saved?.slots) {
-          const groups = groupSlotRecords(saved.slots)
-          results.push({ date: dk, stats: groups, total: groups.reduce((s, g) => s + g.minutes, 0), slots: saved.slots })
-        } else {
-          results.push({ date: dk, stats: [], total: 0, slots: {} })
-        }
-      }
-      setWeekData(results)
+  // 주간: 월~일 7일 문서를 스토어에서 (저장·다른 기기 변경 즉시 반영)
+  const weekKeys = useMemo(() => weekOf(selectedDate), [selectedDate])
+  const weekDocs = useDocs<DayData>(useMemo(() => weekKeys.map(dayDocKey), [weekKeys]))
+  const weekData = useMemo(() => weekKeys.map((dk, i) => {
+    const saved = weekDocs[i]
+    if (saved?.slots) {
+      const groups = groupSlotRecords(saved.slots)
+      return { date: dk, stats: groups, total: groups.reduce((s, g) => s + g.minutes, 0), slots: saved.slots }
     }
-    load()
-  }, [mode, selectedDate])
+    return { date: dk, stats: [], total: 0, slots: {} as Record<number, TimeSlot> }
+  }), [weekKeys, weekDocs])
 
   const [copyMsg, setCopyMsg] = useState('')
   const [showTutorial, setShowTutorial] = useState(false)
@@ -454,7 +434,7 @@ export default function PatternAnalysisView() {
           />
         </div>
         <div className="share-preview">
-          <div ref={reportRef}>
+          <div>
             {mode === 'day' ? (
               <DayReportCard day={data.day} rawSlots={data.rawDay.slots} />
             ) : (

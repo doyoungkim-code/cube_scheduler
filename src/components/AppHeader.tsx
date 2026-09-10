@@ -1,6 +1,8 @@
 import type { ViewId } from '../types/navigation'
 import { useAuth } from '../auth/AuthContext'
 import Icon, { type IconName } from './Icon'
+import { useNow } from '../hooks/useNow'
+import { pad2 } from '../lib/slots'
 
 interface NavItem { id: ViewId; icon: IconName; label: string }
 
@@ -15,15 +17,13 @@ export const NAV_ITEMS: NavItem[] = [
 interface Props {
   currentView: ViewId
   onNavigate: (v: ViewId) => void
-  now: Date
 }
 
-function pad(n: number) { return String(n).padStart(2, '0') }
-
 /** 상단 헤더(로고 + 탭 + 계정) 와 모바일용 하단 탭바 */
-export default function AppHeader({ currentView, onNavigate, now }: Props) {
+export default function AppHeader({ currentView, onNavigate }: Props) {
   const { user, status } = useAuth()
-  const clock = `${pad(now.getHours())}:${pad(now.getMinutes())}`
+  const now = useNow(15000)
+  const clock = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`
   const initial = (user?.displayName || user?.email || '?').slice(0, 1).toUpperCase()
 
   return (

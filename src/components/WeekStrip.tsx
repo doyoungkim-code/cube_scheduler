@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import type { DayData, TimeSlot } from '../types/schedule'
-import { storage } from '../lib/storage'
+import { useDocs } from '../store'
 import { weekOf, compressDayBar, parseDateKey } from '../lib/slots'
+import { dayDocKey } from '../hooks/useDayData'
 
 const DAY_NAMES = ['월', '화', '수', '목', '금', '토', '일']
 
@@ -15,30 +16,19 @@ interface Props {
 
 /** 이번 주 7일 미니 스트립. 각 날의 타임라인을 가는 색 막대로 압축해 보여 준다. */
 export default function WeekStrip({ selectedDate, todayKey, currentSlots, onSelectDate }: Props) {
-  const days = weekOf(selectedDate)
-  const [bars, setBars] = useState<Record<string, ReturnType<typeof compressDayBar>>>({})
+  const days = useMemo(() => weekOf(selectedDate), [selectedDate])
+  const docs = useDocs<DayData>(useMemo(() => days.map(dayDocKey), [days]))
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      const out: Record<string, ReturnType<typeof compressDayBar>> = {}
-      for (const dk of days) {
-        if (dk === selectedDate) { out[dk] = compressDayBar(currentSlots); continue }
-        const saved = await storage.loadData(`day-${dk}`) as DayData | null
-        out[dk] = compressDayBar(saved?.slots ?? {})
-      }
-      if (!cancelled) setBars(out)
-    }
-    load()
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, currentSlots])
+  const bars = useMemo(() => days.map((dk, i) => {
+    const slots = dk === selectedDate ? currentSlots : (docs[i]?.slots ?? {})
+    return compressDayBar(slots)
+  }), [days, docs, selectedDate, currentSlots])
 
   return (
     <div className="week-strip">
       {days.map((dk, i) => {
         const d = parseDateKey(dk)
-        const segs = bars[dk] ?? []
+        const segs = bars[i]
         const filled = segs.some(s => s.color)
         return (
           <button

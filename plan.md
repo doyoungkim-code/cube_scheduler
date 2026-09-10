@@ -1,4 +1,4 @@
-# Cube Scheduler 리팩토링 계획 (초안)
+# Cube Scheduler 리팩토링 계획
 
 > 2026-09-10 기준. 프로젝트를 처음 보는 시각으로 코드 전체를 검토해 만든 문서다.
 > 각 항목의 `[ ]` 에 결정을 적어 두면 그걸 바탕으로 실행 계획을 확정한다.
@@ -17,22 +17,22 @@
 
 | # | 위치 | 증상 | 심각도 |
 |---|------|------|--------|
-| B-1 | `hooks/useDayData.ts` undo 스택 | 날짜를 바꿔도 스택이 안 비워져 Ctrl+Z 가 **다른 날 데이터를 현재 날짜 키에 저장** | 데이터 파괴 |
-| B-2 | `hooks/useDayData.ts` 로드 | 로드 끝나기 전 칠하면 `setDay(saved)` 가 편집을 덮음. `dirtyWeekly/dirtyActivities` 가 리셋되지 않아 인스턴스 간 덮어쓰기 | 유실 |
-| B-3 | `App.tsx` | `useDayData('__unused__')` 더미 인스턴스. 같은 훅이 App×2, 대시보드, 습관 페이지에 독립으로 떠서 `activities`/`routines-weekly` 를 각자 저장 | 유실 |
-| B-4 | `components/QuickMemo.tsx` | 언마운트 시 pending 타이머만 지우고 저장 안 함 → 입력 후 0.5초 내 탭 이동 시 메모 유실 | 유실 |
-| B-5 | `lib/storage.ts` | 저장 실패가 `console.error` 뿐. `saveData` 는 항상 `true`. pending 중 도착한 원격 스냅샷을 버리고 재조회 없음. 실패 재시도 타이머 없음. `pagehide` flush 가 비동기라 마지막 편집 유실 가능 | 유실/무음 |
+| B-1 | `hooks/useDayData.ts` undo 스택 | 날짜를 바꿔도 스택이 안 비워져 Ctrl+Z 가 **다른 날 데이터를 현재 날짜 키에 저장** | 데이터 파괴  ✅ 2단계 |
+| B-2 | `hooks/useDayData.ts` 로드 | 로드 끝나기 전 칠하면 `setDay(saved)` 가 편집을 덮음. `dirtyWeekly/dirtyActivities` 가 리셋되지 않아 인스턴스 간 덮어쓰기 | 유실  ✅ 2단계 |
+| B-3 | `App.tsx` | `useDayData('__unused__')` 더미 인스턴스. 같은 훅이 App×2, 대시보드, 습관 페이지에 독립으로 떠서 `activities`/`routines-weekly` 를 각자 저장 | 유실  ✅ 2단계 |
+| B-4 | `components/QuickMemo.tsx` | 언마운트 시 pending 타이머만 지우고 저장 안 함 → 입력 후 0.5초 내 탭 이동 시 메모 유실 | 유실  ✅ 2단계 (QuickMemo 언마운트 시 저장) |
+| B-5 | `lib/storage.ts` | 저장 실패가 `console.error` 뿐. `saveData` 는 항상 `true`. pending 중 도착한 원격 스냅샷을 버리고 재조회 없음. 실패 재시도 타이머 없음. `pagehide` flush 가 비동기라 마지막 편집 유실 가능 | 유실/무음  🔶 2단계: pending 유지·재시도 타이머·dispose flush 대기 반영. 저장 상태 표시(C16) 남음 |
 | B-6 | `components/TimeTable.tsx` dragover | HTML5 DnD 스펙상 dragover 중 `getData()` 는 빈 문자열 → "같은 활동 슬롯 강조"가 한 번도 동작한 적 없음 | 기능 불능 |
 | B-7 | `pages/PatternAnalysisView.tsx` | 리포트 HTML 에 사용자 입력(제목) 미이스케이프. `text/plain` 에도 HTML 소스를 넣음 | 마크업 깨짐 |
-| B-8 | `hooks/useKanbanData.ts` | `moveTicket` 이 원본 객체를 변이(`t.order = i`), 같은 컬럼 재정렬 오프바이원, 출발 컬럼 order 미정리. 티켓 번호가 배열 인덱스라 삭제 시 전부 밀림 | 버그 |
+| B-8 | `hooks/useKanbanData.ts` | `moveTicket` 이 원본 객체를 변이(`t.order = i`), 같은 컬럼 재정렬 오프바이원, 출발 컬럼 order 미정리. 티켓 번호가 배열 인덱스라 삭제 시 전부 밀림 | 버그  🔶 2단계: 원본 변이 제거. 오프바이원·고정 번호 남음 |
 | B-9 | `auth/AuthContext.tsx` | 오프라인 콜드스타트에서 캐시 스냅샷(`fromCache`)으로 pending 오판 → 승인된 사용자가 대기 화면. 승인 해제 시 Firestore 백엔드 미정리. 거절(문서 삭제) 후 재로그인하면 pending 재생성 | 오동작 |
-| B-10 | `components/HabitChecklist.tsx` | 홈과 습관 페이지에 동시 마운트 → 상태 2벌, 마지막 저장이 이김 | 유실 |
+| B-10 | `components/HabitChecklist.tsx` | 홈과 습관 페이지에 동시 마운트 → 상태 2벌, 마지막 저장이 이김 | 유실  ✅ 2단계 |
 | B-11 | `hooks/useDayData.ts`, `RoutineAdherence.tsx` | `weekly[dk]` 가 undefined 인 부분 데이터 import 시 크래시. 에러 바운더리 없어 흰 화면 | 크래시 |
 | B-12 | `types/kanban.ts`, `App.tsx ROOM_MAP`, `RoutineAdherence.tsx` | 활동을 **이름 문자열**로 판별(`'운동'`, `'알고리즘'`, `slot.label === r.name`). 이름 바꾸면 세부 폼·방 이미지·이행률이 조용히 끊김 | 취약 |
-| B-13 | `App.tsx` `now` 1초 setState | 초 표시 하나 때문에 144블록+칸반+위젯 전체가 매초 리렌더. 메모이제이션 0건 | 성능 |
-| B-14 | `WeekStrip.tsx`, `RoutineAdherence.tsx`, `HabitChecklist.tsx`, `QuickMemoView.tsx` | 슬롯 한 칸 칠할 때마다 7일 재로드 / 루틴 한 칸에 28일 재집계 / 체크마다 60일 순차 로드 / 3초 폴링으로 30개 순차 로드 | 성능 |
-| B-15 | `App.tsx` Ctrl+Z | 어느 뷰에서든 항상 등록 → 대시보드에서 눌러도 보이지 않는 스케줄이 undo 됨 | 오동작 |
-| B-16 | `components/TimeTable.tsx` | `tickets` prop 미사용(데드), 컨텍스트 메뉴 범위가 루틴 포함으로 계산돼 표시 범위 ≠ 삭제 범위 | 사소 |
+| B-13 | `App.tsx` `now` 1초 setState | 초 표시 하나 때문에 144블록+칸반+위젯 전체가 매초 리렌더. 메모이제이션 0건 | 성능  ✅ 2단계 (초 시계는 RoomCard 만) |
+| B-14 | `WeekStrip.tsx`, `RoutineAdherence.tsx`, `HabitChecklist.tsx`, `QuickMemoView.tsx` | 슬롯 한 칸 칠할 때마다 7일 재로드 / 루틴 한 칸에 28일 재집계 / 체크마다 60일 순차 로드 / 3초 폴링으로 30개 순차 로드 | 성능  ✅ 2단계 (스토어 selector, 폴링 제거) |
+| B-15 | `App.tsx` Ctrl+Z | 어느 뷰에서든 항상 등록 → 대시보드에서 눌러도 보이지 않는 스케줄이 undo 됨 | 오동작  ✅ 2단계 (편집 뷰에서만) |
+| B-16 | `components/TimeTable.tsx` | `tickets` prop 미사용(데드), 컨텍스트 메뉴 범위가 루틴 포함으로 계산돼 표시 범위 ≠ 삭제 범위 | 사소  🔶 2단계: tickets prop 제거. 컨텍스트 메뉴 범위 남음 |
 | B-17 | `firestore.rules` | `requestedAt` 검증 없음 → 필드 없는 문서는 관리자 목록에서 숨음. displayName/photoURL 길이·형식 검증 없음 | 보안 |
 
 ---

@@ -1,11 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import type { Activity, DayData, Routine, TimeSlot, WeeklyRoutines } from '../types/schedule'
 import { emptyWeekly, dayKeyFromDate } from '../types/schedule'
-import { storage } from '../lib/storage'
+import { parseDateKey, dateKeyOf } from '../lib/slots'
+import { useDoc, useDocStore, writeDoc, undoLast } from '../store'
 
 export function todayKey(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return dateKeyOf(new Date())
+}
+
+export function dayDocKey(dateKey: string): string {
+  return `day-${dateKey}`
 }
 
 function makeEmptyDay(date: string): DayData {
@@ -13,157 +17,116 @@ function makeEmptyDay(date: string): DayData {
 }
 
 function applyRoutines(day: DayData, routines: Routine[]): DayData {
+  if (routines.length === 0) return day
   const slots = { ...day.slots }
   for (const r of routines) {
     for (let m = r.startMin; m < r.endMin; m += 10) {
-      if (!slots[m]) {
-        slots[m] = { label: r.name, color: r.color }
-      }
+      if (!slots[m]) slots[m] = { label: r.name, color: r.color }
     }
   }
   return { ...day, slots }
 }
 
-// dateKey string → Date → DayOfWeek
 function getDayRoutines(weekly: WeeklyRoutines, dateKey: string): Routine[] {
   const [y, m, d] = dateKey.split('-').map(Number)
   if (!y || !m || !d) return []
-  const date = new Date(y, m - 1, d)
-  const dk = dayKeyFromDate(date)
-  return weekly[dk]
+  return weekly[dayKeyFromDate(parseDateKey(dateKey))] ?? []
 }
 
+const EMPTY_ACTIVITIES: Activity[] = []
+
+// ---------------------------------------------------------------- 활동 팔레트
+
+export function useActivities(): [Activity[], (a: Activity[]) => void] {
+  const doc = useDoc<Activity[]>('activities')
+  const set = useCallback((a: Activity[]) => writeDoc('activities', a, { undo: true }), [])
+  return [doc ?? EMPTY_ACTIVITIES, set]
+}
+
+// ---------------------------------------------------------------- 요일별 루틴
+
+let legacyMigrationStarted = false
+
+export function useWeeklyRoutines(): [WeeklyRoutines, (w: WeeklyRoutines) => void] {
+  const doc = useDoc<WeeklyRoutines>('routines-weekly')
+  const legacy = useDoc<Routine[]>('routines')
+
+  // 마이그레이션: 예전 routines.json → 모든 요일에 복사 (한 번만)
+  useEffect(() => {
+    if (doc !== null || legacy === undefined || legacyMigrationStarted) return
+    if (!legacy || legacy.length === 0) return
+    legacyMigrationStarted = true
+    const migrated: WeeklyRoutines = {
+      weekday: legacy, weekend: legacy,
+      mon: legacy, tue: legacy, wed: legacy, thu: legacy, fri: legacy, sat: legacy, sun: legacy,
+    }
+    writeDoc('routines-weekly', migrated)
+  }, [doc, legacy])
+
+  const weekly = useMemo(() => doc ? { ...emptyWeekly(), ...doc } : emptyWeekly(), [doc])
+  const set = useCallback((w: WeeklyRoutines) => writeDoc('routines-weekly', w, { undo: true }), [])
+  return [weekly, set]
+}
+
+// ---------------------------------------------------------------- 하루 데이터
+
+/**
+ * 날짜 하나의 슬롯 + 루틴 병합 + 편집 액션.
+ * 같은 dateKey 를 보는 컴포넌트가 여러 개여도 스토어 상태는 한 벌이다.
+ */
 export function useDayData(dateKey: string) {
-  const [day, setDay] = useState<DayData>(() => makeEmptyDay(dateKey))
-  const [weekly, setWeekly] = useState<WeeklyRoutines>(() => emptyWeekly())
-  const [activities, setActivities] = useState<Activity[]>([])
-  const [loaded, setLoaded] = useState(false)
-  const dirtyDay = useRef(false)
-  const dirtyWeekly = useRef(false)
-  const dirtyActivities = useRef(false)
+  const key = dayDocKey(dateKey)
+  const saved = useDoc<DayData>(key)
+  const [weekly, setWeekly] = useWeeklyRoutines()
+  const [activities, setActivities] = useActivities()
 
-  useEffect(() => {
-    let cancelled = false
-    setLoaded(false)
-    dirtyDay.current = false
-    async function load() {
-      try {
-        const saved = await storage.loadData(`day-${dateKey}`) as DayData | null
-        const savedWeekly = await storage.loadData('routines-weekly') as WeeklyRoutines | null
-        const savedActivities = await storage.loadData('activities') as Activity[] | null
-        if (cancelled) return
+  const rawDay = useMemo(() => saved ?? makeEmptyDay(dateKey), [saved, dateKey])
+  const dayRoutines = useMemo(() => getDayRoutines(weekly, dateKey), [weekly, dateKey])
+  const day = useMemo(() => applyRoutines(rawDay, dayRoutines), [rawDay, dayRoutines])
 
-        if (savedWeekly) {
-          setWeekly(savedWeekly)
-        } else {
-          // 마이그레이션: 기존 routines.json → 모든 요일에 복사
-          const legacy = await storage.loadData('routines') as Routine[] | null
-          if (cancelled) return
-          if (legacy && legacy.length > 0) {
-            const migrated: WeeklyRoutines = {
-              weekday: legacy, weekend: legacy,
-              mon: legacy, tue: legacy, wed: legacy, thu: legacy, fri: legacy, sat: legacy, sun: legacy,
-            }
-            setWeekly(migrated)
-            // 마이그레이션 즉시 저장
-            storage.saveData('routines-weekly', migrated)
-          } else {
-            setWeekly(emptyWeekly())
-          }
-        }
-
-        if (savedActivities) setActivities(savedActivities)
-        setDay(saved ?? makeEmptyDay(dateKey))
-      } catch {
-        if (!cancelled) setDay(makeEmptyDay(dateKey))
-      }
-      if (!cancelled) setLoaded(true)
-    }
-    load()
-    return () => { cancelled = true }
-  }, [dateKey])
-
-  useEffect(() => {
-    if (!loaded || !dirtyDay.current) return
-    storage.saveData(`day-${dateKey}`, day)
-  }, [day, dateKey, loaded])
-
-  useEffect(() => {
-    if (!loaded || !dirtyWeekly.current) return
-    storage.saveData('routines-weekly', weekly)
-  }, [weekly, loaded])
-
-  useEffect(() => {
-    if (!loaded || !dirtyActivities.current) return
-    storage.saveData('activities', activities)
-  }, [activities, loaded])
-
-  // 해당 날짜 요일의 루틴 적용
-  const dayRoutines = getDayRoutines(weekly, dateKey)
-  const dayWithRoutines = applyRoutines(day, dayRoutines)
-
-  // Undo 스택 (최대 20)
-  const undoStack = useRef<DayData[]>([])
-  const pushUndo = useCallback(() => {
-    undoStack.current = [...undoStack.current.slice(-19), day]
-  }, [day])
-
-  const undo = useCallback(() => {
-    const prev = undoStack.current.pop()
-    if (prev) {
-      dirtyDay.current = true
-      setDay(prev)
-    }
-  }, [])
+  const current = useCallback((): DayData => {
+    return (useDocStore.getState().docs[key] as DayData | null | undefined) ?? makeEmptyDay(dateKey)
+  }, [key, dateKey])
 
   const setGoal = useCallback((g: string) => {
-    pushUndo()
-    dirtyDay.current = true
-    setDay(d => ({ ...d, goal: g }))
-  }, [pushUndo])
+    writeDoc(key, { ...current(), goal: g }, { undo: true })
+  }, [key, current])
 
   const setSlot = useCallback((min: number, slot: TimeSlot | null) => {
-    dirtyDay.current = true
-    setDay(d => {
-      const slots = { ...d.slots }
-      if (slot) { slots[min] = slot } else { delete slots[min] }
-      return { ...d, slots }
-    })
-  }, [])
+    const d = current()
+    const slots = { ...d.slots }
+    if (slot) slots[min] = slot; else delete slots[min]
+    writeDoc(key, { ...d, slots }, { undo: true })
+  }, [key, current])
 
   const setSlotRange = useCallback((startMin: number, endMin: number, slot: TimeSlot | null) => {
-    pushUndo()
-    dirtyDay.current = true
-    setDay(d => {
-      const slots = { ...d.slots }
-      for (let m = startMin; m < endMin; m += 10) {
-        if (slot) { slots[m] = slot } else { delete slots[m] }
-      }
-      return { ...d, slots }
-    })
-  }, [pushUndo])
+    const d = current()
+    const slots = { ...d.slots }
+    for (let m = startMin; m < endMin; m += 10) {
+      if (slot) slots[m] = slot; else delete slots[m]
+    }
+    writeDoc(key, { ...d, slots }, { undo: true })
+  }, [key, current])
 
-  const wrappedSetWeekly = useCallback((w: WeeklyRoutines) => {
-    dirtyWeekly.current = true
-    setWeekly(w)
-  }, [])
-
-  const wrappedSetActivities = useCallback((a: Activity[]) => {
-    dirtyActivities.current = true
-    setActivities(a)
-  }, [])
+  /** 여러 슬롯을 한 번에 갱신 (undo 1단계) */
+  const updateSlots = useCallback((updater: (slots: Record<number, TimeSlot>) => Record<number, TimeSlot>) => {
+    const d = current()
+    writeDoc(key, { ...d, slots: updater({ ...d.slots }) }, { undo: true })
+  }, [key, current])
 
   return {
-    day: dayWithRoutines,
-    rawDay: day,
-    routines: dayRoutines,  // 호환성: 오늘 요일 루틴
+    day,
+    rawDay,
+    routines: dayRoutines,
     weekly,
     activities,
+    loaded: saved !== undefined,
     setGoal,
     setSlot,
     setSlotRange,
-    undo,
-    setWeekly: wrappedSetWeekly,
-    setActivities: wrappedSetActivities,
+    updateSlots,
+    undo: undoLast,
+    setWeekly,
+    setActivities,
   }
 }

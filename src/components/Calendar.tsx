@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
-import { storage } from '../lib/storage'
+import { useState, useMemo } from 'react'
+import { useKeysWithPrefix } from '../store'
+import { hasSlots } from '../lib/storage'
+import { pad2 } from '../lib/slots'
 
 interface CalendarProps {
   selectedDate: string       // YYYY-MM-DD
@@ -9,12 +11,8 @@ interface CalendarProps {
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
 
-function pad(n: number): string {
-  return String(n).padStart(2, '0')
-}
-
 function toKey(y: number, m: number, d: number): string {
-  return `${y}-${pad(m + 1)}-${pad(d)}`
+  return `${y}-${pad2(m + 1)}-${pad2(d)}`
 }
 
 function Calendar({ selectedDate, onSelectDate, todayKey }: CalendarProps) {
@@ -22,26 +20,13 @@ function Calendar({ selectedDate, onSelectDate, todayKey }: CalendarProps) {
   const viewYear = year
   const viewMonth = month - 1 // 0-based
 
+  // 달력이 열릴 때의 선택 날짜 월에서 시작. (달력은 열 때마다 새로 마운트된다)
   const [navYear, setNavYear] = useState(viewYear)
   const [navMonth, setNavMonth] = useState(viewMonth)
-  const [savedDates, setSavedDates] = useState<Set<string>>(new Set())
 
-  // 저장된 날짜 목록 로드
-  useEffect(() => {
-    async function loadKeys() {
-      const keys = await storage.listDayKeys()
-      // keys are like "day-2026-03-23", extract the date part
-      const dates = new Set(keys.map(k => k.replace('day-', '')))
-      setSavedDates(dates)
-    }
-    loadKeys()
-  }, [selectedDate]) // 날짜 변경 시 갱신
-
-  // 선택된 날짜가 바뀌면 해당 월로 이동
-  useEffect(() => {
-    setNavYear(viewYear)
-    setNavMonth(viewMonth)
-  }, [viewYear, viewMonth])
+  // 기록이 있는 날짜 (스토어에서 바로, 저장 즉시 반영)
+  const dayKeys = useKeysWithPrefix('day-', hasSlots)
+  const savedDates = useMemo(() => new Set(dayKeys.map(k => k.slice('day-'.length))), [dayKeys])
 
   const prevMonth = () => {
     if (navMonth === 0) { setNavYear(navYear - 1); setNavMonth(11) }
