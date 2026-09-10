@@ -23,6 +23,8 @@ export type ActivitySpecificFields =
 
 export interface Ticket {
   id: string
+  /** 표시용 고정 번호 (T12). 생성 시 부여되며 삭제돼도 다른 티켓 번호가 밀리지 않는다. */
+  seq?: number
   title: string
   description: string
   why: string

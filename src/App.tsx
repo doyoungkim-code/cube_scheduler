@@ -171,8 +171,8 @@ function App() {
             routines={data.routines}
             selectedActivity={selectedActivity}
             activities={data.activities}
-            onSlotChange={data.setSlot}
             onSlotRangeChange={data.setSlotRange}
+            onRecordChange={data.setRecordRange}
             onDeselectActivity={deselectActivity}
           />
         ) : (
@@ -184,6 +184,7 @@ function App() {
             activities={data.activities}
             onSlotChange={data.setSlot}
             onSlotRangeChange={data.setSlotRange}
+            onRecordChange={data.setRecordRange}
             onTicketDrop={handleTicketDropOnSlot}
             onDeselectActivity={deselectActivity}
           />
@@ -191,7 +192,6 @@ function App() {
         const board = (
           <KanbanBoard
             variant={isMobile ? 'tabs' : isWide ? 'stack' : 'columns'}
-            tickets={kanban.tickets}
             activities={data.activities}
             addTicket={kanban.addTicket}
             updateTicket={kanban.updateTicket}

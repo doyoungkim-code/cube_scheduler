@@ -18,6 +18,9 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/members/$(uid))
         && get(/databases/$(database)/documents/members/$(uid)).data.status == 'approved';
     }
+    function isShortString(v, max) {
+      return v is string && v.size() <= max;
+    }
 
     // 가입 요청 / 승인 상태
     match /members/{uid} {
@@ -25,19 +28,30 @@ service cloud.firestore {
       allow get: if isSelf(uid) || isAdmin();
       allow list: if isAdmin();
       // 본인이 최초 1회 'pending' 으로만 생성 가능 (관리자는 제한 없음)
+      // - email 은 토큰의 이메일과 같아야 하고, requestedAt 은 서버 시각이어야 한다 (관리자 목록 정렬/표시용)
+      // - displayName / photoURL 은 길이 제한
       allow create: if isAdmin() || (
         isSelf(uid)
         && request.resource.data.status == 'pending'
         && request.resource.data.email == request.auth.token.email
+        && request.resource.data.requestedAt == request.time
+        && isShortString(request.resource.data.displayName, 100)
+        && (!('photoURL' in request.resource.data) || isShortString(request.resource.data.photoURL, 500))
         && request.resource.data.keys().hasOnly(['email', 'displayName', 'photoURL', 'status', 'requestedAt'])
       );
       // 승인 / 해제 / 삭제는 관리자만
       allow update, delete: if isAdmin();
     }
 
-    // 사용자별 스케줄 데이터: 본인 + 승인된 사용자만 (관리자는 항상 허용)
+    // 사용자별 스케줄 데이터: 본인 + 승인된 사용자만 (관리자도 본인 데이터만)
+    // 문서는 { json: string, updatedAt: timestamp } 하나의 모양만 허용. json 은 Firestore 문서 한도(1MB) 안에서 900KB 까지.
     match /users/{uid}/store/{key} {
-      allow read, write: if isSelf(uid) && (isAdmin() || isApproved(uid));
+      allow read, delete: if isSelf(uid) && (isAdmin() || isApproved(uid));
+      allow create, update: if isSelf(uid) && (isAdmin() || isApproved(uid))
+        && request.resource.data.keys().hasOnly(['json', 'updatedAt'])
+        && request.resource.data.json is string
+        && request.resource.data.json.size() <= 900000
+        && request.resource.data.updatedAt == request.time;
     }
   }
 }

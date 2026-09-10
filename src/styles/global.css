@@ -532,6 +532,7 @@ button:focus:not(:focus-visible) { outline: none; }
   transition: box-shadow 0.1s;
 }
 .tt-ticket:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+.tt-ticket:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tt-ticket--now { border-left: none; box-shadow: inset 3px 0 0 var(--accent); }
 .tt-ticket-stripe { width: 4px; flex-shrink: 0; }
 .tt-ticket-body {
@@ -578,8 +579,9 @@ button:focus:not(:focus-visible) { outline: none; }
 .hour-detail-actions { display: flex; align-items: center; gap: 6px; }
 
 .hour-slot {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  padding: 6px 10px; border-radius: var(--radius-sm); border: none; background: none;
+  font: inherit; color: inherit;
   cursor: pointer; min-height: 34px;
 }
 .hour-slot:hover { background: var(--bg-hover); }
@@ -1035,6 +1037,8 @@ button:focus:not(:focus-visible) { outline: none; }
   outline: none; font-family: var(--font);
 }
 .ticket-field-input:focus { border-color: var(--accent); }
+.ticket-field-input--error, .ticket-field-input--error:focus { border-color: #ff3b30; }
+.ticket-field-error { font-size: 11px; color: #ff3b30; margin-top: 2px; }
 .ticket-field-select {
   font-size: 14px; padding: 9px 12px;
   border: 1px solid var(--border); border-radius: var(--radius-sm);

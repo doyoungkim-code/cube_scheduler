@@ -1,12 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { Ticket, KanbanStatus } from '../types/kanban'
 import type { Activity } from '../types/schedule'
-
-const STATUS_LABEL: Record<string, string> = {
-  todo: 'TO DO',
-  progress: 'IN PROGRESS',
-  done: 'COMPLETE',
-}
+import { beginTicketDrag, endTicketDrag } from '../lib/dragState'
+import { STATUS_STAMPS } from '../lib/kanban'
 
 /** 상태별로 카드에 표시할 이동 버튼 */
 const MOVE_TARGETS: Record<KanbanStatus, { status: KanbanStatus; label: string }[]> = {
@@ -19,11 +15,9 @@ const TEAR_THRESHOLD = 50
 
 interface Props {
   ticket: Ticket
-  ticketNumber: number
   activities: Activity[]
   showMoveButtons?: boolean
   onClick: () => void
-  onDragStart: (ticketId: string) => void
   onDragEnd: () => void
   onMove?: (status: KanbanStatus) => void
   onTearOff?: (ticketId: string) => void
@@ -47,18 +41,22 @@ function getActivityDetail(ticket: Ticket): string | null {
   return null
 }
 
-export default function KanbanCard({ ticket, ticketNumber, activities, showMoveButtons, onClick, onDragStart, onDragEnd, onMove, onTearOff }: Props) {
+export default function KanbanCard({ ticket, activities, showMoveButtons, onClick, onDragEnd, onMove, onTearOff }: Props) {
   const activity = activities.find(a => a.id === ticket.activityId)
   const accentColor = activity?.color ?? '#8e8e93'
   const created = new Date(ticket.createdAt)
   const dateStr = created.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })
   const timeStr = created.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
   const detail = getActivityDetail(ticket)
+  const ticketNumber = ticket.seq ?? 0
 
   const isProgress = ticket.status === 'progress'
   const [tearDrag, setTearDrag] = useState<{ startX: number; currentX: number } | null>(null)
   const [tornOff, setTornOff] = useState(false)
-  const tearingRef = useRef(false)
+  const tearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 찢기 애니메이션 도중 카드가 사라지면(다른 기기에서 이동 등) Done 이동을 취소
+  useEffect(() => () => { if (tearTimer.current) clearTimeout(tearTimer.current) }, [])
 
   const dragDist = tearDrag ? Math.max(0, tearDrag.currentX - tearDrag.startX) : 0
   const tearProgress = Math.min(1, dragDist / TEAR_THRESHOLD)
@@ -68,7 +66,6 @@ export default function KanbanCard({ ticket, ticketNumber, activities, showMoveB
     if (e.pointerType === 'mouse' && e.button !== 0) return
     e.stopPropagation()
     e.preventDefault()
-    tearingRef.current = true
     setTearDrag({ startX: e.clientX, currentX: e.clientX })
   }, [isProgress, tornOff])
 
@@ -82,11 +79,10 @@ export default function KanbanCard({ ticket, ticketNumber, activities, showMoveB
         const dist = Math.max(0, tearDrag.currentX - tearDrag.startX)
         if (dist >= TEAR_THRESHOLD) {
           setTornOff(true)
-          setTimeout(() => onTearOff?.(ticket.id), 700)
+          tearTimer.current = setTimeout(() => { tearTimer.current = null; onTearOff?.(ticket.id) }, 700)
         }
       }
       setTearDrag(null)
-      tearingRef.current = false
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
@@ -116,16 +112,15 @@ export default function KanbanCard({ ticket, ticketNumber, activities, showMoveB
   const card = (
     <div
       className={`cinema-ticket cinema-ticket--${ticket.status} ${tornOff ? 'cinema-ticket--ripping' : ''} ${tearDrag ? 'cinema-ticket--tearing' : ''}`}
-      draggable={!tearingRef.current && !tornOff}
+      draggable={!tearDrag && !tornOff}
       onDragStart={e => {
-        if (tearingRef.current) { e.preventDefault(); return }
+        if (tearDrag) { e.preventDefault(); return }
         e.dataTransfer.setData('ticket-id', ticket.id)
-        e.dataTransfer.setData('ticket-status', ticket.status)
-        e.dataTransfer.setData('ticket-activity', activity?.name ?? '')
         e.dataTransfer.effectAllowed = 'move'
-        onDragStart(ticket.id)
+        // dragover 에서는 getData 를 못 읽으므로 활동 이름은 공유 상태로 전달
+        beginTicketDrag({ ticketId: ticket.id, activityName: activity?.name ?? '' })
       }}
-      onDragEnd={onDragEnd}
+      onDragEnd={() => { endTicketDrag(); onDragEnd() }}
       onClick={tornOff ? undefined : onClick}
     >
       {/* 왼쪽 메인 바디 */}
@@ -157,7 +152,7 @@ export default function KanbanCard({ ticket, ticketNumber, activities, showMoveB
         {/* 하단 바코드 + 번호 */}
         <div className="cinema-ticket-footer">
           <span className="cinema-ticket-barcode-text">T{ticketNumber} {ticket.id.slice(0, 8).toUpperCase()}</span>
-          <span className="cinema-ticket-footer-class">{STATUS_LABEL[ticket.status]}</span>
+          <span className="cinema-ticket-footer-class">{STATUS_STAMPS[ticket.status]}</span>
         </div>
       </div>
 
@@ -176,7 +171,7 @@ export default function KanbanCard({ ticket, ticketNumber, activities, showMoveB
       >
         <div className="cinema-ticket-stub-label">#{ticketNumber}</div>
         <div className="cinema-ticket-stub-activity">{activity?.name ?? ''}</div>
-        <div className="cinema-ticket-stub-status">{STATUS_LABEL[ticket.status]}</div>
+        <div className="cinema-ticket-stub-status">{STATUS_STAMPS[ticket.status]}</div>
         {/* 톱니 가장자리 */}
         <div className="cinema-ticket-zigzag" />
       </div>

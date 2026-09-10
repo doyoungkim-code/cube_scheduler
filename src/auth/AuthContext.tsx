@@ -68,6 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = snap.data() as MemberDoc | undefined
       const approved = admin || data?.status === 'approved'
 
+      // 오프라인 콜드스타트: 로컬 캐시에 문서가 없다고 해서 "미가입"으로 단정하지 않는다.
+      // 서버 스냅샷이 올 때까지 로딩 유지 (캐시에 승인 문서가 있으면 그대로 진행).
+      if (!snap.exists() && snap.metadata.fromCache) return
+
       if (!snap.exists() && !requested) {
         // 첫 로그인: 가입 요청 문서 생성 (관리자는 바로 승인 상태로)
         requested = true
@@ -92,6 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setStatus('approved')
       } else {
+        // 승인 해제: Firestore 백엔드를 내리고 로컬로 (남은 쓰기는 flush 후 종료)
+        if (backend) {
+          setStorageBackend(new LocalStorageBackend())
+          backend = null
+        }
         setStatus('pending')
       }
     }, err => {

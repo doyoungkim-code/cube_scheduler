@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import type { Activity, DayData, Routine, TimeSlot, WeeklyRoutines } from '../types/schedule'
+import type { Activity, DayData, Routine, SlotRecord, TimeSlot, WeeklyRoutines } from '../types/schedule'
 import { emptyWeekly, dayKeyFromDate } from '../types/schedule'
 import { parseDateKey, dateKeyOf } from '../lib/slots'
 import { useDoc, useDocStore, writeDoc, undoLast } from '../store'
@@ -114,6 +114,17 @@ export function useDayData(dateKey: string) {
     writeDoc(key, { ...d, slots: updater({ ...d.slots }) }, { undo: true })
   }, [key, current])
 
+  /** 구간의 모든 슬롯에 기록(제목·설명·세부 항목)을 붙인다. 루틴 유령 슬롯은 건너뛴다. */
+  const setRecordRange = useCallback((startMin: number, endMin: number, record: SlotRecord) => {
+    updateSlots(slots => {
+      for (let m = startMin; m < endMin; m += 10) {
+        const s = slots[m]
+        if (s) slots[m] = { ...s, detail: record.description, record }
+      }
+      return slots
+    })
+  }, [updateSlots])
+
   return {
     day,
     rawDay,
@@ -125,6 +136,7 @@ export function useDayData(dateKey: string) {
     setSlot,
     setSlotRange,
     updateSlots,
+    setRecordRange,
     undo: undoLast,
     setWeekly,
     setActivities,

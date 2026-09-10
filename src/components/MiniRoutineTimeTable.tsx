@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Activity, Routine } from '../types/schedule'
+import { ERASER_ACTIVITY } from '../types/schedule'
+import { TOTAL_MIN } from '../lib/slots'
 
 interface Props {
   routines: Routine[]
@@ -8,7 +10,6 @@ interface Props {
   onChange: (routines: Routine[]) => void
 }
 
-const TOTAL_MIN = 1440
 const SLOT_COUNT = 144
 
 function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
@@ -53,7 +54,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
             updated.push({ ...r, startMin: end })
           }
         }
-        if (selectedActivity.id !== 'eraser') {
+        if (selectedActivity.id !== ERASER_ACTIVITY.id) {
           updated.push({
             id: uuidv4(),
             name: selectedActivity.name,
@@ -102,7 +103,7 @@ function MiniRoutineTimeTable({ routines, selectedActivity, onChange }: Props) {
 
           let blockStyle: React.CSSProperties | undefined
           if (inDragRange && selectedActivity) {
-            if (selectedActivity.id === 'eraser') {
+            if (selectedActivity.id === ERASER_ACTIVITY.id) {
               blockStyle = { backgroundColor: '#ff3b30', opacity: 0.4 }
             } else {
               blockStyle = { backgroundColor: selectedActivity.color, opacity: 0.75 }

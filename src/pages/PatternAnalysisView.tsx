@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import ViewShell from '../components/ViewShell'
 import { useDayData, todayKey, dayDocKey } from '../hooks/useDayData'
 import { useDocs } from '../store'
-import { weekOf } from '../lib/slots'
+import { weekOf, fmtDuration, fmtMin } from '../lib/slots'
 import type { DayData, TimeSlot } from '../types/schedule'
 
 const DAY_NAMES_FULL = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
@@ -30,12 +30,25 @@ function groupSlotRecords(slots: Record<number, TimeSlot>): RecordGroup[] {
   return groups
 }
 
-function fmtTime(mins: number): string {
-  return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ''}` : `${mins}m`
+const fmtTime = fmtDuration
+
+/** 사용자 입력을 HTML 텍스트/속성값에 넣기 전 이스케이프 */
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
-function fmtMin(m: number): string {
-  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+/** 색 값 검증: CSS 로 나가는 값이라 #rgb / #rrggbb(aa) 만 허용 */
+function safeColor(c: string): string {
+  return /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#8e8e93'
+}
+
+// 붙여넣기 안내는 브라우저당 한 번만 (기기 설정이라 계정 데이터에는 넣지 않음)
+const TUTORIAL_SEEN_KEY = 'scheduler:ui:report-tutorial-seen'
+function readTutorialSeen(): boolean {
+  try { return localStorage.getItem(TUTORIAL_SEEN_KEY) === '1' } catch { return false }
+}
+function writeTutorialSeen(): void {
+  try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1') } catch { /* 무시 */ }
 }
 
 // ===== HTML 직접 생성 (인라인 스타일) =====
@@ -100,8 +113,8 @@ function buildTimelineHtml(slots: Record<number, TimeSlot>, small?: boolean): st
   for (let i = 0; i < 144; i++) {
     const slot = slots[i * 10]
     const g = blockMap[i]
-    const bg = slot ? `background-color:${slot.color};` : ''
-    const tip = g ? ` class="cube-tip" data-tip="${fmtMin(g.start * 10)} ~ ${fmtMin(g.end * 10)}  ${g.title.replace(/"/g, '&quot;')}"` : ''
+    const bg = slot ? `background-color:${safeColor(slot.color)};` : ''
+    const tip = g ? ` class="cube-tip" data-tip="${fmtMin(g.start * 10)} ~ ${fmtMin(g.end * 10)}  ${esc(g.title)}"` : ''
     html += `  <div style="${S.tlBlock};${bg}"${tip}></div>\n`
   }
   html += `</div>\n`
@@ -113,9 +126,9 @@ function buildStatsHtml(stats: { title: string; color: string; minutes: number }
   for (const s of stats) {
     const pct = total > 0 ? (s.minutes / total) * 100 : 0
     html += `<div style="${S.statRow}">\n`
-    html += `  <span style="${S.statDot};background-color:${s.color}"></span>\n`
-    html += `  <span style="${S.statLabel}">${s.title}</span>\n`
-    html += `  <div style="${S.statBarBg}"><div style="${S.statBar};width:${pct}%;background-color:${s.color}"></div></div>\n`
+    html += `  <span style="${S.statDot};background-color:${safeColor(s.color)}"></span>\n`
+    html += `  <span style="${S.statLabel}">${esc(s.title)}</span>\n`
+    html += `  <div style="${S.statBarBg}"><div style="${S.statBar};width:${pct}%;background-color:${safeColor(s.color)}"></div></div>\n`
     html += `  <span style="${S.statTime}">${fmtTime(s.minutes)}</span>\n`
     html += `</div>\n`
   }
@@ -166,8 +179,8 @@ function buildDayHtml(day: DayData, rawSlots: Record<number, TimeSlot>): string 
     for (const g of groups) {
       html += `      <div style="${S.record}">\n`
       html += `        <span style="${S.recordTime}">${fmtMin(g.startMin)} ~ ${fmtMin(g.endMin)}</span>\n`
-      html += `        <span style="${S.recordDot};background-color:${g.color}"></span>\n`
-      html += `        <span style="${S.recordTitle}">${g.title}</span>\n`
+      html += `        <span style="${S.recordDot};background-color:${safeColor(g.color)}"></span>\n`
+      html += `        <span style="${S.recordTitle}">${esc(g.title)}</span>\n`
       html += `        <span style="${S.recordDur}">${fmtTime(g.minutes)}</span>\n`
       html += `      </div>\n`
     }
@@ -377,7 +390,7 @@ export default function PatternAnalysisView() {
 
   const [copyMsg, setCopyMsg] = useState('')
   const [showTutorial, setShowTutorial] = useState(false)
-  const hasShownTutorial = useRef(false)
+  const hasShownTutorial = useRef(readTutorialSeen())
 
   const handleCopy = async () => {
     // 직접 생성한 인라인 스타일 HTML
@@ -386,7 +399,7 @@ export default function PatternAnalysisView() {
       : buildWeekHtml(weekData)
 
     try {
-      // HTML + 텍스트를 함께 복사 (Notion, 메일 등에 서식 유지)
+      // text/html: Notion·메일 등 리치 에디터용. text/plain: Tistory 등 "HTML 편집 모드"에 소스째 붙여넣기용 (README 절차).
       if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
         await navigator.clipboard.write([
           new ClipboardItem({
@@ -405,6 +418,7 @@ export default function PatternAnalysisView() {
 
     if (!hasShownTutorial.current) {
       hasShownTutorial.current = true
+      writeTutorialSeen()
       setShowTutorial(true)
     }
   }

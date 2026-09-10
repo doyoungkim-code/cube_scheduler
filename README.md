@@ -174,7 +174,10 @@ onAuthStateChanged
 
 - 본인은 자기 `members` 문서를 `pending` 으로 한 번만 만들 수 있다.
 - 승인·해제·삭제와 전체 목록 조회는 관리자만.
-- `users/{uid}/store/**` 는 본인이면서 `approved` 인 경우에만 읽고 쓸 수 있다 (관리자는 항상).
+- `users/{uid}/store/**` 는 본인이면서 `approved` 인 경우에만 읽고 쓸 수 있다. 관리자도 남의 데이터는 볼 수 없다.
+- 저장 문서는 `{ json: string, updatedAt }` 모양만 허용하고 `json` 은 900KB 까지.
+
+> 규칙을 바꾼 뒤에는 콘솔에 다시 붙여넣어 게시해야 한다. 저장소의 `firestore.rules` 와 콘솔이 어긋나면 UI 는 열리는데 쓰기가 전부 거부되는 식으로 조용히 깨진다.
 
 ### 데이터 모델
 

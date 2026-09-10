@@ -1,11 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
-import type { Activity, DayData, Routine, TimeSlot } from '../types/schedule'
-import type { Ticket } from '../types/kanban'
-import { activityFieldsForName } from '../types/kanban'
-import TicketModal from './TicketModal'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import type { Activity, DayData, Routine, SlotRecord, TimeSlot } from '../types/schedule'
+import { ERASER_ACTIVITY } from '../types/schedule'
 import HourDetail from './HourDetail'
-import { TOTAL_MIN, fmtMin, groupAllSlots, type TaskGroup } from '../lib/slots'
+import SlotGroupCard from './SlotGroupCard'
+import SlotRecordModal from './SlotRecordModal'
+import { TOTAL_MIN, fmtMin, groupAllSlots, buildRoutineMap, type TaskGroup } from '../lib/slots'
 import { useNowMinute } from '../hooks/useNow'
+import { getTicketDrag } from '../lib/dragState'
 
 interface TimeTableProps {
   day: DayData
@@ -15,6 +16,7 @@ interface TimeTableProps {
   activities: Activity[]
   onSlotChange: (min: number, slot: TimeSlot | null) => void
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
+  onRecordChange: (startMin: number, endMin: number, record: SlotRecord) => void
   onTicketDrop?: (ticketId: string, slotMin: number) => void
   onDeselectActivity?: () => void
 }
@@ -31,7 +33,7 @@ function clampMin(m: number): number {
   return Math.max(0, Math.min(1430, m))
 }
 
-function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSlotChange, onSlotRangeChange, onTicketDrop, onDeselectActivity }: TimeTableProps) {
+function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSlotChange, onSlotRangeChange, onRecordChange, onTicketDrop, onDeselectActivity }: TimeTableProps) {
   const [selectedHour, setSelectedHour] = useState<number | null>(null)
   const blocksRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -106,7 +108,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
           onSlotRangeChange(start, end, { label: shiftExtend.label, color: shiftExtend.color })
           setShiftExtend(null)
         } else if (selectedActivity) {
-          if (selectedActivity.id === 'eraser') {
+          if (selectedActivity.id === ERASER_ACTIVITY.id) {
             onSlotRangeChange(start, end, null)
           } else {
             onSlotRangeChange(start, end, { label: selectedActivity.name, color: selectedActivity.color })
@@ -139,12 +141,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
   const dragEnd = paintDrag ? Math.max(paintDrag.startMin, paintDrag.currentMin) + 10 : -1
 
   // 슬롯별 루틴 매핑 (표시용)
-  const routineMap: Record<number, Routine> = {}
-  for (const r of routines) {
-    for (let m = r.startMin; m < r.endMin; m += 10) {
-      routineMap[m] = r
-    }
-  }
+  const routineMap = useMemo(() => buildRoutineMap(routines), [routines])
 
   const nowPct = (nowMin / TOTAL_MIN) * 100
   const isPaintMode = !!selectedActivity || !!shiftExtend
@@ -181,7 +178,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
         {isPaintMode && (
           <span className="timetable-hint">
             <span className="timetable-hint-dot" style={{ background: shiftExtend?.color ?? selectedActivity?.color }} />
-            {shiftExtend ? `${shiftExtend.label} 연장` : selectedActivity?.id === 'eraser' ? '지울 구간을 드래그' : `${selectedActivity?.name} 칠할 구간을 드래그`}
+            {shiftExtend ? `${shiftExtend.label} 연장` : selectedActivity?.id === ERASER_ACTIVITY.id ? '지울 구간을 드래그' : `${selectedActivity?.name} 칠할 구간을 드래그`}
           </span>
         )}
       </div>
@@ -202,10 +199,14 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
           e.preventDefault()
           e.dataTransfer.dropEffect = 'move'
           const m = minFromMouse(e.clientX)
-          const label = e.dataTransfer.getData('ticket-activity') || ''
-          setTicketDragOver({ min: m, label })
+          // dragover 중엔 getData 가 비어 있으므로 드래그 시작 시 저장한 공유 상태에서 읽는다
+          const label = getTicketDrag()?.activityName ?? ''
+          setTicketDragOver(prev => (prev && prev.min === m && prev.label === label) ? prev : { min: m, label })
         }}
-        onDragLeave={() => setTicketDragOver(null)}
+        onDragLeave={e => {
+          // 자식 블록 사이를 지날 때 발생하는 leave 는 무시 (깜빡임 방지)
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) setTicketDragOver(null)
+        }}
         onDrop={e => {
           const ticketId = e.dataTransfer.getData('ticket-id')
           if (!ticketId) { setTicketDragOver(null); return }
@@ -239,14 +240,14 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
             if (isTicketDropTarget && slotMatchesTicket) {
               blockStyle = { backgroundColor: '#1a73e8', opacity: 0.6 }
             } else if (isTicketDropTarget && !slotMatchesTicket) {
-              blockStyle = rawSlot ? { ...blockStyle, backgroundColor: rawSlot.color, opacity: 0.3 } : { backgroundColor: '#ff3b30', opacity: 0.2 }
+              blockStyle = rawSlot ? { backgroundColor: rawSlot.color, opacity: 0.3 } : { backgroundColor: '#ff3b30', opacity: 0.2 }
             } else if (isDraggingTicket && slotMatchesTicket) {
               // 같은 활동 슬롯 전체를 살짝 강조
               blockStyle = { backgroundColor: slot!.color, boxShadow: 'inset 0 0 0 1px rgba(26,115,232,0.4)' }
             } else if (inDragRange && shiftExtend) {
               blockStyle = { backgroundColor: shiftExtend.color, opacity: 0.75 }
             } else if (inDragRange && selectedActivity) {
-              if (selectedActivity.id === 'eraser') {
+              if (selectedActivity.id === ERASER_ACTIVITY.id) {
                 blockStyle = { backgroundColor: '#ff3b30', opacity: 0.4 }
               } else {
                 blockStyle = { backgroundColor: selectedActivity.color, opacity: 0.75 }
@@ -298,7 +299,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
 
               let blockStyle: React.CSSProperties | undefined
               if (inDragRange && selectedActivity) {
-                if (selectedActivity.id === 'eraser') {
+                if (selectedActivity.id === ERASER_ACTIVITY.id) {
                   blockStyle = { backgroundColor: '#ff3b30', opacity: 0.5 }
                 } else {
                   blockStyle = { backgroundColor: selectedActivity.color, opacity: 0.8 }
@@ -323,15 +324,17 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
         </div>
       )}
 
-      {selectedHour !== null && !isPaintMode ? (
+      {selectedHour !== null ? (
         <HourDetail
           hour={selectedHour}
           day={day}
           rawSlots={rawSlots}
+          routines={routines}
           selectedActivity={selectedActivity}
           activities={activities}
           onSlotChange={onSlotChange}
           onSlotRangeChange={onSlotRangeChange}
+          onRecordChange={onRecordChange}
           onClose={() => setSelectedHour(null)}
         />
       ) : !isPaintMode && (
@@ -343,7 +346,7 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
           nowSlotMin={nowSlotMin}
           activities={activities}
           onSlotRangeChange={onSlotRangeChange}
-          onSlotChange={onSlotChange}
+          onRecordChange={onRecordChange}
         />
       )}
 
@@ -351,11 +354,11 @@ function TimeTable({ day, rawSlots, routines, selectedActivity, activities, onSl
       {contextMenu && (() => {
         const slot = rawSlots[contextMenu.min]
         if (!slot) return null
-        // 연속 구간 찾기
+        // 연속 구간 찾기 — 직접 칠한 슬롯(rawSlots) 기준. 루틴 유령 슬롯은 삭제 대상이 아니므로 제외.
         let gStart = contextMenu.min
-        while (gStart > 0 && day.slots[gStart - 10]?.label === slot.label) gStart -= 10
+        while (gStart > 0 && rawSlots[gStart - 10]?.label === slot.label) gStart -= 10
         let gEnd = contextMenu.min + 10
-        while (gEnd < 1440 && day.slots[gEnd]?.label === slot.label) gEnd += 10
+        while (gEnd < TOTAL_MIN && rawSlots[gEnd]?.label === slot.label) gEnd += 10
 
         return (
           <>
@@ -387,62 +390,19 @@ interface CurrentTasksProps {
   nowSlotMin: number
   activities: Activity[]
   onSlotRangeChange: (startMin: number, endMin: number, slot: TimeSlot | null) => void
-  onSlotChange: (min: number, slot: TimeSlot | null) => void
+  onRecordChange: (startMin: number, endMin: number, record: SlotRecord) => void
 }
 
-function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, activities, onSlotRangeChange, onSlotChange }: CurrentTasksProps) {
+/** 지금 시각이 속한 한 시간의 기록 목록 */
+function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, activities, onSlotRangeChange, onRecordChange }: CurrentTasksProps) {
   const [modalGroup, setModalGroup] = useState<TaskGroup | null>(null)
-  const [modalTicket, setModalTicket] = useState<Ticket | null>(null)
 
   const hourStart = Math.floor(nowMin / 60) * 60
   const hourEnd = hourStart + 60
-  const allGroups = groupAllSlots(day, rawSlots, routineMap, nowSlotMin)
-  const groups = allGroups.filter(g => !g.isRoutine && g.startMin < hourEnd && g.endMin > hourStart)
-
-  const handleEdit = (g: TaskGroup) => {
-    const act = activities.find(a => a.name === g.label)
-    // record가 있으면 저장된 데이터로 복원, 없으면 기본값
-    const rec = g.record
-    setModalTicket({
-      id: '',
-      title: rec?.title ?? '',
-      description: rec?.description ?? g.detail,
-      why: '',
-      activityId: act?.id ?? '',
-      status: 'progress',
-      activityFields: rec?.activityFields ?? (act ? activityFieldsForName(act.name) : { type: 'general', data: { notes: '' } }),
-      order: 0,
-      createdAt: '',
-      updatedAt: '',
-    })
-    setModalGroup(g)
-  }
-
-  const handleModalSave = (ticket: Ticket) => {
-    // 타임라인 기록은 칸반과 별개 — 슬롯 record에 저장
-    if (modalGroup) {
-      const record = {
-        title: ticket.title,
-        description: ticket.description,
-        activityFields: ticket.activityFields,
-      }
-      for (let m = modalGroup.startMin; m < modalGroup.endMin; m += 10) {
-        const slot = day.slots[m]
-        if (slot) onSlotChange(m, { ...slot, detail: ticket.description, record })
-      }
-    }
-    setModalGroup(null)
-    setModalTicket(null)
-  }
-
-  const handleDelete = (g: TaskGroup) => {
-    onSlotRangeChange(g.startMin, g.endMin, null)
-  }
-
-  const duration = (g: TaskGroup) => {
-    const mins = g.endMin - g.startMin
-    return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ''}` : `${mins}m`
-  }
+  const groups = useMemo(
+    () => groupAllSlots(day, rawSlots, routineMap, nowSlotMin).filter(g => !g.isRoutine && g.startMin < hourEnd && g.endMin > hourStart),
+    [day, rawSlots, routineMap, nowSlotMin, hourStart, hourEnd],
+  )
 
   return (
     <div className="tt-current-tasks">
@@ -454,52 +414,25 @@ function CurrentTasks({ day, rawSlots, routineMap, nowMin, nowSlotMin, activitie
         <div className="tt-current-empty">등록된 일정 없음</div>
       ) : (
         <div className="tt-current-groups">
-          {groups.map((g, i) => {
-            const displayTitle = g.record?.title || g.label
-            const displayDesc = g.record?.description || g.detail
-
-            return (
-              <div
-                key={i}
-                className={`tt-ticket ${g.containsNow ? 'tt-ticket--now' : ''}`}
-                onClick={() => handleEdit(g)}
-              >
-                <div className="tt-ticket-stripe" style={{ background: g.color }} />
-                <div className="tt-ticket-body">
-                  <div className="tt-ticket-header">
-                    <span className="tt-ticket-type" style={{ background: g.color }}>{g.label}</span>
-                    <span className="tt-ticket-time">{fmtMin(g.startMin)}~{fmtMin(g.endMin)}</span>
-                    <span className="tt-ticket-duration">{duration(g)}</span>
-                    <button
-                      className="tt-ticket-delete"
-                      onClick={e => { e.stopPropagation(); handleDelete(g) }}
-                    >✕</button>
-                  </div>
-                  <div className="tt-ticket-title">{displayTitle}</div>
-                  {displayDesc && <div className="tt-ticket-desc">{displayDesc}</div>}
-                </div>
-              </div>
-            )
-          })}
+          {groups.map(g => (
+            <SlotGroupCard
+              key={g.startMin}
+              group={g}
+              highlightNow
+              onClick={() => setModalGroup(g)}
+              onDelete={() => onSlotRangeChange(g.startMin, g.endMin, null)}
+            />
+          ))}
         </div>
       )}
 
       {modalGroup && (
-        <TicketModal
-          ticket={modalTicket}
-          defaultStatus="progress"
+        <SlotRecordModal
+          group={modalGroup}
           activities={activities}
-          hideStatus
-          hideWhy
-          onSave={handleModalSave}
-          onDelete={() => {
-            if (modalGroup) {
-              onSlotRangeChange(modalGroup.startMin, modalGroup.endMin, null)
-            }
-            setModalGroup(null)
-            setModalTicket(null)
-          }}
-          onClose={() => { setModalGroup(null); setModalTicket(null) }}
+          onSave={onRecordChange}
+          onDelete={(s, e) => onSlotRangeChange(s, e, null)}
+          onClose={() => setModalGroup(null)}
         />
       )}
     </div>

@@ -1,23 +1,16 @@
 import type { Ticket, KanbanStatus } from '../types/kanban'
 import type { Activity } from '../types/schedule'
 import KanbanCard from './KanbanCard'
-
-const COLUMN_LABELS: Record<KanbanStatus, string> = {
-  todo: 'To Do',
-  progress: 'Progress',
-  done: 'Done',
-}
+import { STATUS_LABELS } from '../lib/kanban'
 
 interface Props {
   status: KanbanStatus
   tickets: Ticket[]
-  allTickets: Ticket[]
   activities: Activity[]
   dragOverIndex: number | null
   showHeader?: boolean
   showMoveButtons?: boolean
   onTicketClick: (ticket: Ticket) => void
-  onDragStart: (ticketId: string) => void
   onDragEnd: () => void
   onDragOver: (e: React.DragEvent, status: KanbanStatus, index: number) => void
   onDrop: (e: React.DragEvent, status: KanbanStatus) => void
@@ -25,19 +18,15 @@ interface Props {
   onTearOff?: (ticketId: string) => void
 }
 
-function getTicketNumber(ticket: Ticket, allTickets: Ticket[]): number {
-  const sorted = [...allTickets].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-  return sorted.findIndex(t => t.id === ticket.id) + 1
-}
-
 export default function KanbanColumn({
-  status, tickets, allTickets, activities, dragOverIndex, showHeader = true, showMoveButtons = false,
-  onTicketClick, onDragStart, onDragEnd, onDragOver, onDrop, onMove, onTearOff,
+  status, tickets, activities, dragOverIndex, showHeader = true, showMoveButtons = false,
+  onTicketClick, onDragEnd, onDragOver, onDrop, onMove, onTearOff,
 }: Props) {
   return (
     <div
       className="kanban-column"
       onDragOver={e => {
+        if (!e.dataTransfer.types.includes('ticket-id')) return
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         const cards = e.currentTarget.querySelectorAll('.cinema-ticket')
@@ -55,7 +44,7 @@ export default function KanbanColumn({
     >
       {showHeader && (
         <div className="kanban-column-header">
-          <span className="kanban-column-title">{COLUMN_LABELS[status]}</span>
+          <span className="kanban-column-title">{STATUS_LABELS[status]}</span>
           <span className="kanban-column-count">{tickets.length}</span>
         </div>
       )}
@@ -66,11 +55,9 @@ export default function KanbanColumn({
             {dragOverIndex === i && <div className="kanban-drop-indicator" />}
             <KanbanCard
               ticket={ticket}
-              ticketNumber={getTicketNumber(ticket, allTickets)}
               activities={activities}
               showMoveButtons={showMoveButtons}
               onClick={() => onTicketClick(ticket)}
-              onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onMove={onMove ? (s) => onMove(ticket.id, s) : undefined}
               onTearOff={onTearOff}

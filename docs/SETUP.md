@@ -68,7 +68,7 @@
 이 규칙이 하는 일:
 - 로그인한 사람은 자기 `members/{uid}` 문서를 **대기(pending) 상태로만** 만들 수 있다.
 - 승인/해제/삭제는 관리자 이메일만 할 수 있다.
-- 스케줄 데이터(`users/{uid}/store/...`)는 **본인이면서 승인된 사용자**만 읽고 쓸 수 있다. 관리자는 항상 허용.
+- 스케줄 데이터(`users/{uid}/store/...`)는 **본인이면서 승인된 사용자**만 읽고 쓸 수 있다. 관리자도 자기 데이터만 본다.
 
 ---
 
@@ -83,7 +83,7 @@
      apiKey: "AIza...",
      authDomain: "cube-scheduler-xxxx.firebaseapp.com",
      projectId: "cube-scheduler-xxxx",
-     storageBucket: "cube-scheduler-xxxx.appspot.com",
+     storageBucket: "cube-scheduler-xxxx.firebasestorage.app",
      messagingSenderId: "1234567890",
      appId: "1:1234567890:web:abcdef"
    };
@@ -94,7 +94,7 @@
      apiKey: 'AIza...',
      authDomain: 'cube-scheduler-xxxx.firebaseapp.com',
      projectId: 'cube-scheduler-xxxx',
-     storageBucket: 'cube-scheduler-xxxx.appspot.com',
+     storageBucket: 'cube-scheduler-xxxx.firebasestorage.app',
      messagingSenderId: '1234567890',
      appId: '1:1234567890:web:abcdef',
    }

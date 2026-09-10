@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import type { Ticket, KanbanStatus } from '../types/kanban'
 import { useDoc, useDocStore, writeDoc } from '../store'
+import { moveTicketIn, nextSeq, ticketsByStatus } from '../lib/kanban'
 
 const KEY = 'tickets'
 const EMPTY: Ticket[] = []
@@ -9,12 +10,27 @@ function currentTickets(): Ticket[] {
   return (useDocStore.getState().docs[KEY] as Ticket[] | null | undefined) ?? EMPTY
 }
 
+let seqMigrationStarted = false
+
 export function useKanbanData() {
   const doc = useDoc<Ticket[]>(KEY)
   const tickets = doc ?? EMPTY
 
+  // 마이그레이션: seq 가 없는 예전 티켓에 생성 순서대로 번호 부여 (한 번만)
+  useEffect(() => {
+    if (!doc || seqMigrationStarted) return
+    if (doc.every(t => typeof t.seq === 'number')) return
+    seqMigrationStarted = true
+    const byCreated = [...doc].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    let seq = nextSeq(doc)
+    const assigned = new Map<string, number>()
+    for (const t of byCreated) if (typeof t.seq !== 'number') assigned.set(t.id, seq++)
+    writeDoc(KEY, doc.map(t => assigned.has(t.id) ? { ...t, seq: assigned.get(t.id) } : t))
+  }, [doc])
+
   const addTicket = useCallback((ticket: Ticket) => {
-    writeDoc(KEY, [...currentTickets(), ticket], { undo: true })
+    const prev = currentTickets()
+    writeDoc(KEY, [...prev, { ...ticket, seq: ticket.seq ?? nextSeq(prev) }], { undo: true })
   }, [])
 
   const updateTicket = useCallback((id: string, partial: Partial<Ticket>) => {
@@ -29,29 +45,12 @@ export function useKanbanData() {
 
   const moveTicket = useCallback((id: string, toStatus: KanbanStatus, toOrder: number) => {
     const prev = currentTickets()
-    const ticket = prev.find(t => t.id === id)
-    if (!ticket) return
-    const without = prev.filter(t => t.id !== id)
-    const column = without
-      .filter(t => t.status === toStatus)
-      .sort((a, b) => a.order - b.order)
-    const at = Math.max(0, Math.min(toOrder, column.length))
-    column.splice(at, 0, { ...ticket, status: toStatus, updatedAt: new Date().toISOString() })
-    // 원본 객체를 변이하지 않고 새 객체로 재번호
-    const reindexed = column.map((t, i) => (t.order === i ? t : { ...t, order: i }))
-    const others = without.filter(t => t.status !== toStatus)
-    writeDoc(KEY, [...others, ...reindexed], { undo: true })
+    const next = moveTicketIn(prev, id, toStatus, toOrder)
+    if (next !== prev) writeDoc(KEY, next, { undo: true })
   }, [])
 
-  const byStatus = useMemo(() => {
-    const map: Record<KanbanStatus, Ticket[]> = { todo: [], progress: [], done: [] }
-    for (const t of tickets) (map[t.status] ?? map.todo).push(t)
-    for (const k of Object.keys(map) as KanbanStatus[]) map[k].sort((a, b) => a.order - b.order)
-    return map
-  }, [tickets])
-
+  const byStatus = useMemo(() => ticketsByStatus(tickets), [tickets])
   const getTicketsByStatus = useCallback((status: KanbanStatus) => byStatus[status], [byStatus])
-
   const getTicket = useCallback((id: string) => tickets.find(t => t.id === id) ?? null, [tickets])
 
   return {
