@@ -1,0 +1,71 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "선택안 B"
+    },
+    {
+      "id": "page-2",
+      "name": "탐색 (A / C)"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "B · 종이 스튜디오 (선택)",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "page": "page-1"
+    },
+    {
+      "file": "DirectionA.dc.html",
+      "title": "A · 정돈된 현재",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "page": "page-2"
+    },
+    {
+      "file": "DirectionC.dc.html",
+      "title": "C · 다크 콘솔",
+      "x": 1560,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-pick",
+      "x": 0,
+      "y": -150,
+      "w": 520,
+      "page": "page-1",
+      "text": "B 선택 (2026-09-11). 크림 라이트 테마, 카드는 배경에 녹이고 활동색·타이포 위계로 구분, 칩은 아웃라인.\n앱 CSS 에 반영 중: :root 토큰 → 라이트, 흰 카드 오버라이드 제거, 헤더 알약 탭, 팔레트 아웃라인 칩."
+    },
+    {
+      "id": "note-a",
+      "x": 0,
+      "y": -150,
+      "w": 440,
+      "page": "page-2",
+      "text": "A · 정돈된 현재 — 탈락. 브라운 유지안."
+    },
+    {
+      "id": "note-c",
+      "x": 1560,
+      "y": -150,
+      "w": 440,
+      "page": "page-2",
+      "text": "C · 다크 콘솔 — 탈락. 다크 테마 요청이 오면 B 토큰의 다크 변형으로 재검토."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

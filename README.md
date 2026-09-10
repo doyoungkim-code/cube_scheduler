@@ -51,7 +51,10 @@ npm run build      # 타입 검사 + dist/ 생성
 npm run preview    # 빌드 결과 미리보기
 npm test           # 유닛 테스트 (Vitest, src/**/*.test.ts)
 npm run lint       # ESLint (typescript-eslint + react-hooks)
+npm run dev:local  # Firebase 없이 로컬 모드로 (운영 DB 안 건드림). ?demo=1 을 붙이면 데모 데이터
 ```
+
+주소에 `?view=habit-tracker` 처럼 붙이면 그 화면으로 열린다 (`scheduler` · `pattern-analysis` · `habit-tracker` · `quick-memo` · `settings`).
 
 `src/lib/firebaseConfig.ts` 의 `firebaseConfig` 가 `null` 이면 로그인 없이 브라우저 `localStorage` 에만 저장하는 **로컬 모드**로 동작한다.
 
@@ -227,9 +230,10 @@ type WeeklyRoutines = Record<'weekday' | 'weekend' | DayOfWeek, Routine[]>
 
 ## 테마
 
-- 배경 `#56423f` 다크 브라운, 포인트 `#e8a87c`. 토큰은 `global.css` 의 `:root` 에 있다.
-- 타임테이블·칸반·모달은 흰 배경 카드로 대비를 준다 (해당 영역에서 CSS 변수를 로컬로 덮어씀).
-- 칸반 티켓은 크림색 기차표. Progress 상태는 스텁이 살짝 흔들리고, Done 은 스텁이 떼어진 모양이다.
+- "종이 스튜디오": 크림 바탕 `#f4efe7`, 카드 `#fbf8f2`, 글자 `#2b211e`, 포인트 `#c9713f`. 토큰은 `global.css` 의 `:root` 에만 있고 컴포넌트는 토큰만 쓴다.
+- 카드는 배경에 녹이고 활동색과 타이포 위계로 구분한다. 팔레트 칩은 활동색 아웃라인, 선택하면 채워진다.
+- 칸반 티켓은 종이색 기차표. Progress 상태는 스텁이 살짝 흔들리고, Done 은 스텁이 떼어진 모양이다.
+- 시안과 탈락안은 `design/` 에 있다 (`node design/build-mockups.mjs` 로 재생성).
 
 ## 로드맵
 

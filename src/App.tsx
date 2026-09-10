@@ -17,7 +17,7 @@ import { useNowMinute } from './hooks/useNow'
 import { undoLast } from './store'
 import { dateKeyOf, shiftDateKey, parseDateKey } from './lib/slots'
 import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from './types/schedule'
-import type { ViewId } from './types/navigation'
+import { initialViewFromLocation, type ViewId } from './types/navigation'
 import PatternAnalysisView from './pages/PatternAnalysisView'
 import HabitTrackerView from './pages/HabitTrackerView'
 import QuickMemoView from './pages/QuickMemoView'
@@ -42,7 +42,7 @@ const ROOM_MAP: Record<string, string> = {
 const UNDO_VIEWS: ReadonlySet<ViewId> = new Set<ViewId>(['scheduler', 'habit-tracker'])
 
 function App() {
-  const [currentView, setCurrentView] = useState<ViewId>('scheduler')
+  const [currentView, setCurrentView] = useState<ViewId>(initialViewFromLocation)
   const nowMin = useNowMinute()                 // 분 단위로만 리렌더
   const today = dateKeyOf(new Date())
   const [selectedDate, setSelectedDate] = useState(today)

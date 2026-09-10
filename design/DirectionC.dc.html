@@ -1,0 +1,261 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #17161a; }
+    a { color: #f0b98f; } a:hover { color: #f0b98f; }
+  </style>
+</helmet>
+<div style="width:1440px;min-height:900px;background:#17161a;color:#ededf0;font-family:'Pretendard Variable', Pretendard, 'Noto Sans KR', system-ui, sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;">
+
+<header style="display:flex;align-items:center;gap:16px;height:56px;padding:0 24px;background:rgba(23,22,26,0.9);border-bottom:1px solid #2e2d34;position:sticky;top:0;">
+  <div style="display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;color:#ededf0;letter-spacing:-0.01em;">
+    <div style="width:22px;height:22px;border-radius:6px;background:#f0b98f;"></div>Cube Scheduler
+  </div>
+  <nav style="display:flex;gap:2px;margin-left:16px;">
+    <a href="#" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;color:#1a1210;background:#f0b98f;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1210" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>스케줄</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;color:#a5a4ad;background:transparent;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>대시보드</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;color:#a5a4ad;background:transparent;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>습관</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;color:#a5a4ad;background:transparent;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>메모</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none;color:#a5a4ad;background:transparent;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>설정</a>
+  </nav>
+  <div style="flex:1;"></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6f6e78;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6e78" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>Ctrl+Z</span>
+    <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">14:23</span>
+    <div style="width:30px;height:30px;border-radius:50%;background:#2a292f;border:1px solid #2e2d34;"></div>
+  </div>
+</header>
+
+<div style="display:flex;flex-direction:column;gap:16px;padding:20px 24px;">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+<div style="display:flex;align-items:center;gap:10px;">
+  <a href="#" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid #2e2d34;background:#1f1e23;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+  <div style="display:flex;align-items:baseline;gap:8px;">
+    <span style="font-size:22px;font-weight:800;letter-spacing:-0.02em;color:#ededf0;">9월 11일</span>
+    <span style="font-size:13px;color:#a5a4ad;">금요일 · 오늘</span>
+  </div>
+  <a href="#" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px solid #2e2d34;background:#1f1e23;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+  <div style="flex:1;"></div>
+  <a href="#" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid #2e2d34;background:#1f1e23;font-size:12px;font-weight:600;color:#a5a4ad;text-decoration:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a5a4ad" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>달력</a>
+</div>
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #2e2d34;background:transparent;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#3a3a4a;"></span>수면</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #2e2d34;background:transparent;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#4a9eff;"></span>알고리즘</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #af52de;background:#af52de22;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#af52de;"></span>프로젝트</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #2e2d34;background:transparent;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#34c759;"></span>운동</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #2e2d34;background:transparent;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#ff9500;"></span>식사</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #2e2d34;background:transparent;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#5ac8fa;"></span>영어 공부</a><a href="#" style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:8px;border:1px solid #2e2d34;background:transparent;font-size:13px;font-weight:600;color:#ededf0;text-decoration:none;"><span style="width:8px;height:8px;border-radius:50%;background:#a2845e;"></span>커피, 음악, 독서</a>
+  <a href="#" style="width:32px;height:32px;border-radius:999px;border:1.5px dashed #2e2d34;display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6e78" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></a>
+  <div style="flex:1;"></div>
+  <a href="#" style="width:32px;height:32px;border-radius:999px;border:1.5px solid #2e2d34;display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6f6e78" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></a>
+</div>
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="padding:4px 10px;border-radius:999px;background:#af52de;color:#fff;font-size:12px;font-weight:700;">프로젝트</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#6f6e78;">14:23</span>
+    </div>
+    <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6f6e78;"><span style="width:8px;height:8px;border-radius:50%;background:#af52de;"></span>프로젝트 · 칠할 구간을 드래그</span>
+  </div>
+  <div style="position:relative;height:14px;"><span style="position:absolute;left:0.00%;transform:translateX(0);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">00</span><span style="position:absolute;left:12.50%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">03</span><span style="position:absolute;left:25.00%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">06</span><span style="position:absolute;left:37.50%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">09</span><span style="position:absolute;left:50.00%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">12</span><span style="position:absolute;left:62.50%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">15</span><span style="position:absolute;left:75.00%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">18</span><span style="position:absolute;left:87.50%;transform:translateX(-50%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">21</span><span style="position:absolute;left:100.00%;transform:translateX(-100%);font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;">00</span></div>
+  <div style="position:relative;height:72px;border-radius:6px;background:#141317;overflow:hidden;">
+    <span style="position:absolute;left:0.00%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:4.17%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:8.33%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:12.50%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:16.67%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:20.83%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:25.00%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:29.17%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:33.33%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:37.50%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:41.67%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:45.83%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:50.00%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:54.17%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:58.33%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:62.50%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:66.67%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:70.83%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:75.00%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:79.17%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:83.33%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:87.50%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:91.67%;top:0;bottom:0;width:1px;background:#2a292f;"></span><span style="position:absolute;left:95.83%;top:0;bottom:0;width:1px;background:#2a292f;"></span>
+    <div style="position:absolute;left:0.000%;width:29.167%;top:0;height:72px;background:#3a3a4a;border-radius:0px;"></div><div style="position:absolute;left:31.250%;width:2.083%;top:0;height:72px;background:#ff9500;border-radius:0px;"></div><div style="position:absolute;left:37.500%;width:10.417%;top:0;height:72px;background:#4a9eff;border-radius:0px;"></div><div style="position:absolute;left:50.000%;width:2.083%;top:0;height:72px;background:#ff9500;border-radius:0px;"></div><div style="position:absolute;left:54.167%;width:12.500%;top:0;height:72px;background:#af52de;border-radius:0px;"></div><div style="position:absolute;left:70.833%;width:4.167%;top:0;height:72px;background:#34c759;border-radius:0px;"></div><div style="position:absolute;left:77.083%;width:2.083%;top:0;height:72px;background:#ff9500;border-radius:0px;"></div><div style="position:absolute;left:83.333%;width:4.167%;top:0;height:72px;background:#5ac8fa;border-radius:0px;"></div><div style="position:absolute;left:89.583%;width:4.167%;top:0;height:72px;background:#a2845e;border-radius:0px;"></div><div style="position:absolute;left:95.833%;width:4.167%;top:0;height:72px;background:#3a3a4a;border-radius:0px;"></div>
+    <span style="position:absolute;left:59.93%;top:0;bottom:0;width:2px;background:#f0b98f;"></span>
+    <span style="position:absolute;left:59.93%;top:-4px;width:10px;height:10px;margin-left:-4px;border-radius:50%;background:#f0b98f;"></span>
+  </div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:2px;"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#a5a4ad;"><span style="width:8px;height:8px;border-radius:2px;background:#4a9eff;"></span><span style="font-family:'JetBrains Mono', Consolas, monospace;">09:00–11:30</span>BOJ 1753 다익스트라</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#a5a4ad;"><span style="width:8px;height:8px;border-radius:2px;background:#af52de;"></span><span style="font-family:'JetBrains Mono', Consolas, monospace;">13:00–16:00</span>스케줄러 v2 마이그레이션</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#a5a4ad;"><span style="width:8px;height:8px;border-radius:2px;background:#34c759;"></span><span style="font-family:'JetBrains Mono', Consolas, monospace;">17:00–18:00</span>러닝 5km</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#a5a4ad;"><span style="width:8px;height:8px;border-radius:2px;background:#5ac8fa;"></span><span style="font-family:'JetBrains Mono', Consolas, monospace;">20:00–21:00</span>Shadowing 2ch</span></div>
+</section></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;overflow:hidden;">
+  <div style="height:96px;background:linear-gradient(160deg, #3b2b28 0%, #2a1d1b 100%);position:relative;">
+    <div style="position:absolute;left:16px;bottom:12px;display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;background:#af52de;color:#fff;font-size:12px;font-weight:700;">프로젝트</div>
+  </div>
+  <div style="padding:14px 16px;display:flex;flex-direction:column;gap:2px;">
+    <div style="font-family:'JetBrains Mono', Consolas, monospace;font-size:32px;font-weight:600;letter-spacing:-0.02em;color:#ededf0;line-height:1;">14:23<span style="font-size:16px;color:#6f6e78;">:08</span></div>
+    <div style="font-size:12px;color:#6f6e78;">2026.09.11 금</div>
+  </div>
+</section>
+<div style="display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));gap:6px;">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:transparent;border:1px solid transparent;">
+      <span style="font-size:11px;font-weight:700;color:#6f6e78;">월</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">7</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"><span style="position:absolute;left:0.00%;width:29.17%;top:0;height:100%;background:#3a3a4a;"></span><span style="position:absolute;left:31.25%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:37.50%;width:10.42%;top:0;height:100%;background:#4a9eff;"></span><span style="position:absolute;left:50.00%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:54.17%;width:12.50%;top:0;height:100%;background:#af52de;"></span><span style="position:absolute;left:70.83%;width:4.17%;top:0;height:100%;background:#34c759;"></span><span style="position:absolute;left:77.08%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:83.33%;width:4.17%;top:0;height:100%;background:#5ac8fa;"></span><span style="position:absolute;left:89.58%;width:4.17%;top:0;height:100%;background:#a2845e;"></span><span style="position:absolute;left:95.83%;width:4.17%;top:0;height:100%;background:#3a3a4a;"></span></div>
+    </div><div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:transparent;border:1px solid transparent;">
+      <span style="font-size:11px;font-weight:700;color:#6f6e78;">화</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">8</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"></div>
+    </div><div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:transparent;border:1px solid transparent;">
+      <span style="font-size:11px;font-weight:700;color:#6f6e78;">수</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">9</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"><span style="position:absolute;left:0.00%;width:29.17%;top:0;height:100%;background:#3a3a4a;"></span><span style="position:absolute;left:31.25%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:37.50%;width:10.42%;top:0;height:100%;background:#4a9eff;"></span><span style="position:absolute;left:50.00%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:54.17%;width:12.50%;top:0;height:100%;background:#af52de;"></span><span style="position:absolute;left:70.83%;width:4.17%;top:0;height:100%;background:#34c759;"></span><span style="position:absolute;left:77.08%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:83.33%;width:4.17%;top:0;height:100%;background:#5ac8fa;"></span><span style="position:absolute;left:89.58%;width:4.17%;top:0;height:100%;background:#a2845e;"></span><span style="position:absolute;left:95.83%;width:4.17%;top:0;height:100%;background:#3a3a4a;"></span></div>
+    </div><div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:transparent;border:1px solid transparent;">
+      <span style="font-size:11px;font-weight:700;color:#6f6e78;">목</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">10</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"><span style="position:absolute;left:0.00%;width:29.17%;top:0;height:100%;background:#3a3a4a;"></span><span style="position:absolute;left:31.25%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:37.50%;width:10.42%;top:0;height:100%;background:#4a9eff;"></span><span style="position:absolute;left:50.00%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:54.17%;width:12.50%;top:0;height:100%;background:#af52de;"></span><span style="position:absolute;left:70.83%;width:4.17%;top:0;height:100%;background:#34c759;"></span><span style="position:absolute;left:77.08%;width:2.08%;top:0;height:100%;background:#ff9500;"></span><span style="position:absolute;left:83.33%;width:4.17%;top:0;height:100%;background:#5ac8fa;"></span><span style="position:absolute;left:89.58%;width:4.17%;top:0;height:100%;background:#a2845e;"></span><span style="position:absolute;left:95.83%;width:4.17%;top:0;height:100%;background:#3a3a4a;"></span></div>
+    </div><div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:#2a292f;border:1px solid #f0b98f;">
+      <span style="font-size:11px;font-weight:700;color:#6f6e78;">금</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#ededf0;">11</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"></div>
+    </div><div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:transparent;border:1px solid transparent;">
+      <span style="font-size:11px;font-weight:700;color:#4a9eff;">토</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">12</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"></div>
+    </div><div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px 6px;border-radius:6px;background:transparent;border:1px solid transparent;">
+      <span style="font-size:11px;font-weight:700;color:#ff6b5e;">일</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:13px;color:#a5a4ad;">13</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:#2a292f;overflow:hidden;position:relative;"></div>
+    </div>
+</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:300px minmax(0,1fr) 300px;gap:20px;align-items:start;">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:13px;font-weight:600;letter-spacing:0.02em;color:#a5a4ad;">오늘 활동</div><span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:12px;color:#6f6e78;">10h</span></div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#af52de;flex-shrink:0;"></span>
+      <span style="font-size:13px;color:#ededf0;width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">프로젝트</span>
+      <div style="flex:1;height:6px;border-radius:3px;background:#2a292f;overflow:hidden;"><div style="width:100%;height:100%;background:#af52de;border-radius:3px;"></div></div>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;width:44px;text-align:right;">3h</span>
+    </div><div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#4a9eff;flex-shrink:0;"></span>
+      <span style="font-size:13px;color:#ededf0;width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">알고리즘</span>
+      <div style="flex:1;height:6px;border-radius:3px;background:#2a292f;overflow:hidden;"><div style="width:83%;height:100%;background:#4a9eff;border-radius:3px;"></div></div>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;width:44px;text-align:right;">2h 30m</span>
+    </div><div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#ff9500;flex-shrink:0;"></span>
+      <span style="font-size:13px;color:#ededf0;width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">식사</span>
+      <div style="flex:1;height:6px;border-radius:3px;background:#2a292f;overflow:hidden;"><div style="width:50%;height:100%;background:#ff9500;border-radius:3px;"></div></div>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;width:44px;text-align:right;">1h 30m</span>
+    </div><div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#34c759;flex-shrink:0;"></span>
+      <span style="font-size:13px;color:#ededf0;width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">운동</span>
+      <div style="flex:1;height:6px;border-radius:3px;background:#2a292f;overflow:hidden;"><div style="width:33%;height:100%;background:#34c759;border-radius:3px;"></div></div>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;width:44px;text-align:right;">1h</span>
+    </div><div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#5ac8fa;flex-shrink:0;"></span>
+      <span style="font-size:13px;color:#ededf0;width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">영어 공부</span>
+      <div style="flex:1;height:6px;border-radius:3px;background:#2a292f;overflow:hidden;"><div style="width:33%;height:100%;background:#5ac8fa;border-radius:3px;"></div></div>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;width:44px;text-align:right;">1h</span>
+    </div><div style="display:flex;align-items:center;gap:8px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#a2845e;flex-shrink:0;"></span>
+      <span style="font-size:13px;color:#ededf0;width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">커피, 음악, 독서</span>
+      <div style="flex:1;height:6px;border-radius:3px;background:#2a292f;overflow:hidden;"><div style="width:33%;height:100%;background:#a2845e;border-radius:3px;"></div></div>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;width:44px;text-align:right;">1h</span>
+    </div>
+  </div>
+</section>
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:13px;font-weight:600;letter-spacing:0.02em;color:#a5a4ad;">오늘의 습관</div><span style="font-size:12px;color:#6f6e78;">2 / 3</span></div>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="display:flex;align-items:center;gap:10px;min-height:32px;">
+      <span style="width:22px;height:22px;border-radius:7px;border:2px solid #4a9eff;background:#4a9eff;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span style="flex:1;font-size:13px;color:#a5a4ad;text-decoration:line-through;">물 8잔</span>
+      <span style="display:flex;align-items:center;gap:3px;font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#f0b98f;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0b98f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.4 0 8-3.1 8-7.5 0-3.4-2.3-5.7-4-8.5-.4 2.2-1.6 3.6-3 4.5C12.5 8.4 12 5.6 10 3c-.5 4.5-6 6.6-6 11.5C4 18.9 7.6 22 12 22z"/></svg>12</span>
+    </div><div style="display:flex;align-items:center;gap:10px;min-height:32px;">
+      <span style="width:22px;height:22px;border-radius:7px;border:2px solid #34c759;background:#34c759;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span style="flex:1;font-size:13px;color:#a5a4ad;text-decoration:line-through;">스트레칭</span>
+      <span style="display:flex;align-items:center;gap:3px;font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#f0b98f;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f0b98f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.4 0 8-3.1 8-7.5 0-3.4-2.3-5.7-4-8.5-.4 2.2-1.6 3.6-3 4.5C12.5 8.4 12 5.6 10 3c-.5 4.5-6 6.6-6 11.5C4 18.9 7.6 22 12 22z"/></svg>5</span>
+    </div><div style="display:flex;align-items:center;gap:10px;min-height:32px;">
+      <span style="width:22px;height:22px;border-radius:7px;border:2px solid #ff9500;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"></span>
+      <span style="flex:1;font-size:13px;color:#ededf0;text-decoration:none;">일기</span>
+      
+    </div>
+  </div>
+  <a href="#" style="font-size:12px;color:#6f6e78;text-decoration:none;">+ 습관 추가</a>
+</section></div>
+    
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:14px;font-weight:600;letter-spacing:0.02em;color:#ededf0;">보드</div><a href="#" style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#f0b98f;color:#1a1210;font-size:12px;font-weight:700;text-decoration:none;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1a1210" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>티켓</a></div>
+  <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:14px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:12px;font-weight:600;letter-spacing:0.02em;color:#a5a4ad;">To Do</div><span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;">1</span></div>
+      <div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:#26252b;box-shadow:0 0 0 1px #2e2d34;opacity:1;">
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#5ac8fa;color:#fff;font-size:10px;font-weight:800;letter-spacing:0.06em;"><span>영어 공부</span><span style="font-family:'JetBrains Mono', Consolas, monospace;opacity:0.85;">09.11</span></div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:3px;">
+          <div style="font-size:13px;font-weight:700;color:#ededf0;">Shadowing 2챕터</div>
+          
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px dashed #2e2d34;font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;"><span>T15</span><span>TO DO</span></div>
+      </div>
+      <div style="width:54px;border-left:2px dashed #17161a;background:#5ac8fa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;">
+        <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;font-weight:700;">#15</span>
+        <span style="writing-mode:vertical-rl;font-size:9px;letter-spacing:0.12em;opacity:0.9;">TO DO</span>
+      </div>
+    </div>
+    </div><div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:12px;font-weight:600;letter-spacing:0.02em;color:#a5a4ad;">Progress</div><span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;">2</span></div>
+      <div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:#26252b;box-shadow:0 0 0 1px #2e2d34;opacity:1;">
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#af52de;color:#fff;font-size:10px;font-weight:800;letter-spacing:0.06em;"><span>프로젝트</span><span style="font-family:'JetBrains Mono', Consolas, monospace;opacity:0.85;">09.11</span></div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:3px;">
+          <div style="font-size:13px;font-weight:700;color:#ededf0;">스케줄러 v2 마이그레이션</div>
+          <div style="font-size:11px;color:#a5a4ad;">활동 id 참조 + 구간 리스트</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px dashed #2e2d34;font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;"><span>T14</span><span>IN PROGRESS</span></div>
+      </div>
+      <div style="width:54px;border-left:2px dashed #17161a;background:#af52de;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;">
+        <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;font-weight:700;">#14</span>
+        <span style="writing-mode:vertical-rl;font-size:9px;letter-spacing:0.12em;opacity:0.9;">IN PROGRESS</span>
+      </div>
+    </div><div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:#26252b;box-shadow:0 0 0 1px #2e2d34;opacity:1;">
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#4a9eff;color:#fff;font-size:10px;font-weight:800;letter-spacing:0.06em;"><span>알고리즘</span><span style="font-family:'JetBrains Mono', Consolas, monospace;opacity:0.85;">09.11</span></div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:3px;">
+          <div style="font-size:13px;font-weight:700;color:#ededf0;">BOJ 1753 다익스트라</div>
+          <div style="font-size:11px;color:#a5a4ad;">우선순위 큐 복습</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px dashed #2e2d34;font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;"><span>T12</span><span>IN PROGRESS</span></div>
+      </div>
+      <div style="width:54px;border-left:2px dashed #17161a;background:#4a9eff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;">
+        <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;font-weight:700;">#12</span>
+        <span style="writing-mode:vertical-rl;font-size:9px;letter-spacing:0.12em;opacity:0.9;">IN PROGRESS</span>
+      </div>
+    </div>
+    </div><div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:12px;font-weight:600;letter-spacing:0.02em;color:#a5a4ad;">Done</div><span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;">1</span></div>
+      <div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;background:#26252b;box-shadow:0 0 0 1px #2e2d34;opacity:0.65;">
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#34c759;color:#fff;font-size:10px;font-weight:800;letter-spacing:0.06em;"><span>운동</span><span style="font-family:'JetBrains Mono', Consolas, monospace;opacity:0.85;">09.11</span></div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:3px;">
+          <div style="font-size:13px;font-weight:700;color:#ededf0;">러닝 5km</div>
+          <div style="font-size:11px;color:#a5a4ad;">한강 코스</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px dashed #2e2d34;font-family:'JetBrains Mono', Consolas, monospace;font-size:10px;color:#6f6e78;"><span>T11</span><span>COMPLETE</span></div>
+      </div>
+      <div style="width:54px;border-left:2px dashed #17161a;background:#34c759;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;">
+        <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;font-weight:700;">#11</span>
+        <span style="writing-mode:vertical-rl;font-size:9px;letter-spacing:0.12em;opacity:0.9;">COMPLETE</span>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:13px;font-weight:600;letter-spacing:0.02em;color:#ededf0;">현재 시간대</div><span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:12px;color:#6f6e78;">14:00 ~ 15:00</span></div>
+  
+<div style="display:flex;align-items:stretch;border-radius:6px;overflow:hidden;background:#2a292f;border:1px solid #2e2d34;box-shadow:inset 3px 0 0 #f0b98f;">
+  <div style="width:4px;background:#af52de;"></div>
+  <div style="flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:2px;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:10px;font-weight:700;color:#fff;padding:1px 8px;border-radius:999px;background:#af52de;">프로젝트</span>
+      <span style="font-family:'JetBrains Mono', Consolas, monospace;font-size:11px;color:#6f6e78;">13:00~16:00</span>
+      <span style="font-size:11px;color:#6f6e78;margin-left:auto;">3h</span>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:#ededf0;">스케줄러 v2 마이그레이션</div>
+  </div>
+</div>
+</section>
+<section style="background:#1f1e23;border:1px solid #2e2d34;border-radius:10px;box-shadow:0 0 0 1px #2e2d34;padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="font-size:13px;font-weight:600;letter-spacing:0.02em;color:#a5a4ad;">메모 · 9월 11일</div><span style="font-size:11px;color:#6f6e78;">저장됨</span></div>
+  <div style="min-height:72px;padding:10px 12px;border-radius:6px;background:#17161a;border:1px solid #2e2d34;font-size:13px;line-height:1.6;color:#a5a4ad;">v2 마이그레이션 끝나면 대시보드 주간 리포트에 습관 체크 수 넣기</div>
+</section></div>
+  </div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

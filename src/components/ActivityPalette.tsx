@@ -72,7 +72,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
         {/* 수면 */}
         <button
           className={`palette-chip palette-chip--sleep ${selectedId === SLEEP_ACTIVITY.id ? 'palette-chip--selected' : ''}`}
-          style={{ backgroundColor: SLEEP_ACTIVITY.color }}
+          style={{ '--chip': SLEEP_ACTIVITY.color } as React.CSSProperties}
           aria-pressed={selectedId === SLEEP_ACTIVITY.id}
           onClick={() => onSelect(selectedId === SLEEP_ACTIVITY.id ? null : SLEEP_ACTIVITY.id)}
           title="수면: 드래그로 수면 시간 칠하기"
@@ -118,7 +118,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange }: Activit
             <button
               key={a.id}
               className={`palette-chip ${selectedId === a.id ? 'palette-chip--selected' : ''}`}
-              style={{ backgroundColor: a.color }}
+              style={{ '--chip': a.color } as React.CSSProperties}
               aria-pressed={selectedId === a.id}
               onClick={() => onSelect(selectedId === a.id ? null : a.id)}
               onContextMenu={e => handleContextMenu(e, a)}
