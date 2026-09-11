@@ -4,8 +4,9 @@ import type { Activity } from '../types/schedule'
 import { ERASER_ACTIVITY } from '../types/schedule'
 import { inkOn } from '../lib/color'
 import { toastUndo, showToast } from '../store/ui'
-import { PRESETS, presetOf, presetByImageKey, ROOM_IMAGE_KEYS, roomImagePath, imageKeyOfPreset } from '../lib/activityCatalog'
+import { PRESETS, presetOf, presetByImageKey, roomImagePath, imageKeyOfPreset, DEFAULT_ROOM_IMAGE } from '../lib/activityCatalog'
 import ActivityPickerModal from './ActivityPickerModal'
+import RoomImageModal from './RoomImageModal'
 
 const PALETTE_COLORS = [
   '#4a9eff', '#34c759', '#ff9500', '#ff3b30',
@@ -33,6 +34,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange, autoOpenW
   const [editName, setEditName] = useState('')
   const [editColor, setEditColor] = useState('')
   const [editImage, setEditImage] = useState<string | undefined>(undefined)
+  const [roomPicking, setRoomPicking] = useState(false)
   const addInputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
   const autoOpened = useRef(false)
@@ -119,6 +121,7 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange, autoOpenW
         {activities.map(a => {
           if (editingId === a.id) {
             const preset = editingPreset
+            const thumbKey = editImage ?? (preset ? imageKeyOfPreset(preset) : null)
             return (
               <div key={a.id} className="palette-chip-edit">
                 <div className="palette-edit-row">
@@ -148,7 +151,17 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange, autoOpenW
                     />
                   ))}
                 </div>
-                <RoomImagePicker value={editImage} fallbackKey={preset ? imageKeyOfPreset(preset) : null} onChange={setEditImage} />
+                <div className="palette-edit-room">
+                  <img
+                    className="palette-edit-room-thumb"
+                    src={thumbKey ? roomImagePath(thumbKey) : DEFAULT_ROOM_IMAGE}
+                    alt=""
+                  />
+                  <span className="palette-edit-room-label">
+                    방 이미지 · {editImage ? (presetByImageKey(editImage)?.name ?? editImage) : preset ? `자동 (${preset.name})` : '자동 (기본 방)'}
+                  </span>
+                  <button type="button" className="btn-sm btn-cancel" onClick={() => setRoomPicking(true)}>방 바꾸기</button>
+                </div>
                 <div className="palette-edit-actions">
                   <button className="btn-sm btn-save" onClick={handleEditSave}>확인</button>
                   <button className="btn-sm btn-delete" onClick={() => handleDelete(a.id)}>팔레트에서 빼기</button>
@@ -240,6 +253,16 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange, autoOpenW
         </div>
       )}
 
+      {roomPicking && editing && (
+        <RoomImageModal
+          value={editImage}
+          autoKey={editingPreset ? imageKeyOfPreset(editingPreset) : null}
+          activityName={editName || editing.name}
+          onSave={setEditImage}
+          onClose={() => setRoomPicking(false)}
+        />
+      )}
+
       {picking && (
         <ActivityPickerModal
           activities={activities}
@@ -250,44 +273,6 @@ function ActivityPalette({ activities, selectedId, onSelect, onChange, autoOpenW
         />
       )}
     </section>
-  )
-}
-
-/** 방 이미지 고르기: 이미지가 있는 프리셋 썸네일. "자동" = 프리셋 이미지(없으면 기본 방) */
-function RoomImagePicker({ value, fallbackKey, onChange }: {
-  value: string | undefined
-  fallbackKey: string | null
-  onChange: (v: string | undefined) => void
-}) {
-  return (
-    <div className="room-picker" role="group" aria-label="방 이미지">
-      <button
-        type="button"
-        className={`room-picker-item ${!value ? 'room-picker-item--on' : ''}`}
-        onClick={() => onChange(undefined)}
-        aria-pressed={!value}
-        title={fallbackKey ? '프리셋 이미지' : '기본 방'}
-      >
-        <img src={fallbackKey ? roomImagePath(fallbackKey) : './room.png'} alt="" />
-        <span>자동</span>
-      </button>
-      {ROOM_IMAGE_KEYS.map(k => {
-        const name = presetByImageKey(k)?.name ?? k
-        return (
-          <button
-            key={k}
-            type="button"
-            className={`room-picker-item ${value === k ? 'room-picker-item--on' : ''}`}
-            onClick={() => onChange(k)}
-            aria-pressed={value === k}
-            title={name}
-          >
-            <img src={roomImagePath(k)} alt="" />
-            <span>{name}</span>
-          </button>
-        )
-      })}
-    </div>
   )
 }
 

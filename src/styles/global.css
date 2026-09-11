@@ -1816,14 +1816,24 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .palette-edit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .palette-edit-preset { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-.room-picker { display: flex; gap: 6px; flex-wrap: wrap; }
-.room-picker-item {
-  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px; width: 60px;
-  border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); cursor: pointer;
-  font-size: 10px; color: var(--text-secondary);
+.palette-edit-room { display: flex; align-items: center; gap: 10px; }
+.palette-edit-room-thumb { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border); }
+.palette-edit-room-label { flex: 1; font-size: 12px; color: var(--text-secondary); }
+
+/* ===== 방 이미지 고르기 모달 ===== */
+.room-modal-body { display: flex; flex-direction: column; gap: 14px; }
+.room-modal-hint { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.room-grid-item {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px;
+  border: 2px solid var(--border); border-radius: var(--radius); background: var(--bg-elevated); cursor: pointer;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); transition: border-color 0.1s, transform 0.1s;
 }
-.room-picker-item img { width: 44px; height: 44px; object-fit: contain; border-radius: 6px; background: var(--bg-primary); }
-.room-picker-item--on { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.room-grid-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+.room-grid-item img { width: 100%; aspect-ratio: 1 / 1; object-fit: contain; border-radius: 8px; background: var(--bg-primary); }
+.room-grid-item--on { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.room-grid-name { text-align: center; }
+@media (max-width: 719px) { .room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ===== 방 카드: 이미지 준비 중 ===== */
 .room-card-img-wrap { position: relative; }
