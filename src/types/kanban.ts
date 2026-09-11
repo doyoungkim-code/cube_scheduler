@@ -40,12 +40,9 @@ export function emptyActivityFields(): ActivitySpecificFields {
   return { type: 'general', data: { notes: '' } }
 }
 
-export function activityFieldsForName(name: string): ActivitySpecificFields {
-  if (name === '운동') {
-    return { type: 'exercise', data: { exerciseType: '', km: '', minutes: '' } }
-  }
-  if (name === '알고리즘') {
-    return { type: 'algorithm', data: { problemNumber: '', solveTime: '', link: '' } }
-  }
+/** 세부 폼 종류로 빈 필드 만들기. 종류는 활동의 프리셋에서 온다 (lib/activityCatalog.ts fieldsKindOf). */
+export function emptyFieldsOfKind(kind: ActivitySpecificFields['type']): ActivitySpecificFields {
+  if (kind === 'exercise') return { type: 'exercise', data: { exerciseType: '', km: '', minutes: '' } }
+  if (kind === 'algorithm') return { type: 'algorithm', data: { problemNumber: '', solveTime: '', link: '' } }
   return { type: 'general', data: { notes: '' } }
 }

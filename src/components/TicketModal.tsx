@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useId } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { Ticket, KanbanStatus, ActivitySpecificFields } from '../types/kanban'
-import { emptyActivityFields, activityFieldsForName } from '../types/kanban'
+import { emptyActivityFields, emptyFieldsOfKind } from '../types/kanban'
+import { fieldsKindOf } from '../lib/activityCatalog'
 import type { Activity } from '../types/schedule'
 import TicketActivityFields from './TicketActivityFields'
 
@@ -51,7 +52,7 @@ export default function TicketModal({ ticket, defaultStatus, activities, onSave,
   const handleActivityChange = (newId: string) => {
     setActivityId(newId)
     const act = activities.find(a => a.id === newId)
-    const newFields = act ? activityFieldsForName(act.name) : emptyActivityFields()
+    const newFields = emptyFieldsOfKind(fieldsKindOf(act))
     if (newFields.type !== activityFields.type) setActivityFields(newFields)
   }
 

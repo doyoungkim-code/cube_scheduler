@@ -1769,3 +1769,70 @@ button:focus:not(:focus-visible) { outline: none; }
 /* ===== 첫 로드 ===== */
 .app-content { transition: opacity 0.2s ease; }
 .app-content--loading { opacity: 0.45; pointer-events: none; }
+
+/* ===== 활동 고르기 모달 ===== */
+.picker-body { display: flex; flex-direction: column; gap: 14px; }
+.picker-search {
+  font-size: 14px; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-elevated); color: var(--text-primary); outline: none; width: 100%;
+}
+.picker-search:focus { border-color: var(--accent); }
+.picker-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.picker-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 6px 12px; min-height: 32px;
+  border-radius: 999px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-secondary);
+  cursor: pointer;
+}
+.picker-tab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cat, var(--text-muted)); }
+.picker-tab--active { background: var(--text-primary); border-color: var(--text-primary); color: var(--bg-secondary); }
+.picker-section { display: flex; flex-direction: column; gap: 8px; }
+.picker-section-title { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--text-muted); }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.picker-item {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; text-align: left;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); color: var(--text-primary);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color 0.1s, background 0.1s, transform 0.1s;
+}
+.picker-item:hover { border-color: var(--chip); transform: translateY(-1px); }
+.picker-item-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--chip); flex-shrink: 0; }
+.picker-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-item-check { font-size: 12px; font-weight: 800; }
+.picker-item--on { background: var(--chip); border-color: var(--chip); color: var(--chip-ink, #fff); }
+.picker-item--on .picker-item-dot { background: var(--chip-ink, #fff); opacity: 0.85; }
+.picker-item--has { opacity: 0.45; cursor: default; }
+.picker-item--has:hover { transform: none; border-color: var(--border); }
+.picker-footer {
+  display: flex; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border);
+  position: sticky; bottom: 0; background: var(--bg-elevated);
+}
+.picker-custom { background: none; border: none; color: var(--accent); font-weight: 600; font-size: 13px; cursor: pointer; padding: 6px 4px; }
+.picker-custom:hover { text-decoration: underline; }
+
+/* ===== 팔레트: 빈 상태 · 편집 폼 확장 ===== */
+.palette-empty {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 6px 4px 10px; font-size: 13px; color: var(--text-secondary);
+}
+.palette-edit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.palette-edit-preset { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.room-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.room-picker-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px; width: 60px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-elevated); cursor: pointer;
+  font-size: 10px; color: var(--text-secondary);
+}
+.room-picker-item img { width: 44px; height: 44px; object-fit: contain; border-radius: 6px; background: var(--bg-primary); }
+.room-picker-item--on { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ===== 방 카드: 이미지 준비 중 ===== */
+.room-card-img-wrap { position: relative; }
+.room-card-pending {
+  position: absolute; right: 10px; bottom: 10px;
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  background: rgba(43, 33, 30, 0.75); color: #fff; letter-spacing: 0.02em;
+}
+@media (max-width: 719px) {
+  .picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .picker-search { font-size: 16px; }
+}

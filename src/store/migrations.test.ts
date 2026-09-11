@@ -49,8 +49,9 @@ describe('v1 → v2 마이그레이션', () => {
     const reading = activities.find(a => a.name === '독서')
     expect(reading).toBeDefined()
     expect(reading?.archived).toBe(true)
-    expect(reading?.color).toBe('#999')
-    expect(activities).toHaveLength(2)   // '독서' 는 두 날에 있어도 한 번만 생성
+    expect(reading?.id).toBe('preset:reading')   // 프리셋 이름이라 프리셋 id 로 생성 (색도 프리셋 색)
+    // '독서' 는 두 날에 있어도 한 번만 생성. 수면 프리셋은 팔레트에 없어서 추가됨 → run, 독서, 수면
+    expect(activities).toHaveLength(3)
     expect(d10.segments).toEqual([
       { start: 0, end: 20, activityId: 'run' },
       { start: 20, end: 30, activityId: reading!.id, record: { title: '', description: '3장' } },
@@ -113,5 +114,52 @@ describe('v1 → v2 마이그레이션', () => {
     rerunMigrations()
     await settle()
     expect((backend.data.get('day-2026-09-12') as DayData).v).toBe(2)
+  })
+})
+
+describe('프리셋 연결', () => {
+  it('이름이 카탈로그와 같은 기존 활동에 presetId 를 붙이고, 묶인 이름은 프리셋 이름으로 바꾼다', async () => {
+    backend.data.set('activities', [
+      { id: 'u1', name: '운동', color: '#222', order: 0 },
+      { id: 'u2', name: '커피, 음악, 독서', color: '#a2845e', order: 1 },
+      { id: 'u3', name: '내 활동', color: '#000', order: 2 },
+    ])
+    useDocStore.getState().ensure('activities')
+    await tick()
+    ensureMigrated()
+    await settle()
+    const acts = backend.data.get('activities') as Activity[]
+    expect(acts.find(a => a.id === 'u1')).toMatchObject({ presetId: 'preset:exercise', name: '운동' })
+    expect(acts.find(a => a.id === 'u2')).toMatchObject({ presetId: 'preset:coffee', name: '커피' })
+    expect(acts.find(a => a.id === 'u3')?.presetId).toBeUndefined()
+    // 수면 프리셋이 문서에 없었으므로 추가됨
+    expect(acts.find(a => a.id === SLEEP_ACTIVITY.id)).toMatchObject({ presetId: SLEEP_ACTIVITY.id, name: '수면' })
+  })
+
+  it('같은 프리셋 이름이 둘이면 첫 번째만 연결된다', async () => {
+    backend.data.set('activities', [
+      { id: 'u1', name: '운동', color: '#222', order: 0 },
+      { id: 'u2', name: '운동', color: '#333', order: 1 },
+    ])
+    useDocStore.getState().ensure('activities')
+    await tick()
+    ensureMigrated()
+    await settle()
+    const acts = backend.data.get('activities') as Activity[]
+    expect(acts.filter(a => a.presetId === 'preset:exercise')).toHaveLength(1)
+  })
+
+  it('v1 day 에만 있던 프리셋 이름은 프리셋 id 로 활동을 만든다', async () => {
+    backend.data.set('activities', [])
+    backend.data.set('day-2026-09-10', { date: '2026-09-10', goal: '', slots: { 0: { label: '독서', color: '#999' } } })
+    useDocStore.getState().ensure('activities')
+    await tick()
+    ensureMigrated()
+    await settle()
+    const acts = backend.data.get('activities') as Activity[]
+    const reading = acts.find(a => a.name === '독서')
+    expect(reading).toMatchObject({ id: 'preset:reading', presetId: 'preset:reading', archived: true })
+    const d = backend.data.get('day-2026-09-10') as DayData
+    expect(d.segments[0].activityId).toBe('preset:reading')
   })
 })

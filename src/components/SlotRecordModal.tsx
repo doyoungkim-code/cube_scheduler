@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import type { Activity, SlotRecord } from '../types/schedule'
 import type { Ticket } from '../types/kanban'
-import { activityFieldsForName, emptyActivityFields } from '../types/kanban'
+import { emptyFieldsOfKind } from '../types/kanban'
+import { fieldsKindOf } from '../lib/activityCatalog'
 import type { TaskGroup } from '../lib/slots'
 import TicketModal from './TicketModal'
 
@@ -31,7 +32,7 @@ export default function SlotRecordModal({ group, activities, onSave, onDelete, o
       why: '',
       activityId: act?.id ?? '',
       status: 'progress',
-      activityFields: rec?.activityFields ?? (act ? activityFieldsForName(act.name) : emptyActivityFields()),
+      activityFields: rec?.activityFields ?? emptyFieldsOfKind(fieldsKindOf(act)),
       order: 0,
       createdAt: '',
       updatedAt: '',

@@ -16,6 +16,10 @@ export interface Activity {
   order: number
   /** 팔레트에서 지운 활동. 과거 기록이 참조하므로 문서는 남기고 숨긴다. */
   archived?: boolean
+  /** 카탈로그 프리셋에 연결된 활동 (lib/activityCatalog.ts). 방 이미지·세부 폼이 여기서 결정된다. */
+  presetId?: string
+  /** 방 이미지 키 (rooms/<키>.png). 없으면 프리셋 이미지, 그것도 없으면 기본 방. */
+  roomImage?: string
 }
 
 export const SLEEP_ACTIVITY: Activity = {

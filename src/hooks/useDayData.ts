@@ -51,10 +51,12 @@ export function useVisibleActivities(): [Activity[], (a: Activity[]) => void] {
   // 화면 팔레트의 편집 결과를 전체 목록에 합쳐 저장 (보관된 활동은 유지)
   const set = useCallback((next: Activity[]) => {
     const nextIds = new Set(next.map(a => a.id))
+    // 다시 담은 활동(보관됐던 프리셋 등)은 보관 해제
+    const shown = next.map(a => a.archived ? { ...a, archived: false } : a)
     const archived = all.filter(a => a.archived && !nextIds.has(a.id))
     // 팔레트에서 지운 활동은 삭제 대신 보관 (과거 기록이 참조)
     const removed = all.filter(a => !a.archived && !nextIds.has(a.id)).map(a => ({ ...a, archived: true }))
-    setAll([...next, ...archived, ...removed])
+    setAll([...shown, ...archived, ...removed])
   }, [all, setAll])
   return [visible, set]
 }

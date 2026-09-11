@@ -15,7 +15,8 @@
 - **세로 타임라인 (모바일)**: 캘린더 일간 뷰처럼 시간이 위에서 아래로 흐른다. 위아래로 드래그해 칠하고, 구간을 탭하면 기록을 적는다. 가로 스크롤이 없고, 현재 시각이 화면 밖이면 "지금" 버튼이 뜬다.
 - **주간 스트립**: 이번 주 7일의 타임라인을 가는 색 막대로 압축해 보여 주고, 누르면 그 날로 이동한다.
 - **현재 시간대 / 시간 상세**: 지금 시각이 속한 시간대의 기록을 카드로 보여 준다. 블록을 클릭하면 그 시간의 상세 패널이 열리고, 카드를 누르면 제목·내용·활동별 세부 항목(운동 종류/거리/시간, 알고리즘 문제번호/풀이시간/링크)을 적을 수 있다.
-- **활동 팔레트**: 활동 이름과 색을 자유롭게 추가·편집. 현재 활동에 따라 왼쪽 방 이미지가 바뀐다 (알고리즘, 프로젝트, 운동, 식사, 영어 공부, 수면 등).
+- **활동 팔레트**: 미리 만들어 둔 **활동 카탈로그**(생활·공부·일·운동·취미·기록·사람 7분류, 39개)에서 골라 담는다. 처음 시작하면 추천 세트가 체크된 채로 고르기 창이 열린다. 없는 활동은 직접 만들 수 있고, 색과 방 이미지는 편집(우클릭 / 길게 누르기)에서 바꾼다.
+- **방 이미지**: 현재 활동의 프리셋 이미지(`public/rooms/<키>.png`)가 왼쪽 방 카드에 뜬다. 아직 그림이 없는 프리셋은 기본 방 위에 "방 준비 중" 배지가 보인다. 커스텀 활동은 프리셋 이미지 중 하나를 골라 쓸 수 있다.
 - **날짜 이동**: 화살표로 하루씩, 달력으로 원하는 날짜로. 기록이 있는 날은 달력에 점이 찍힌다.
 - **실행 취소**: Ctrl+Z (최근 50단계). 슬롯뿐 아니라 루틴·팔레트·티켓·습관 편집도 되돌린다. 구간·티켓·습관·활동을 지우면 화면 아래에 **되돌리기** 토스트가 뜬다 (모바일에서도).
 - **저장 상태**: 헤더 시계 옆에 저장 중 / 오프라인 / 저장 실패(자동 재시도) 가 표시된다.
@@ -80,7 +81,7 @@ cube_scheduler/
 ├── .github/workflows/deploy.yml   # GitHub Pages 자동 배포
 ├── docs/SETUP.md                  # Firebase / 배포 / 승인 설정 가이드
 ├── firestore.rules                # Firestore 보안 규칙 (콘솔에 붙여넣기)
-├── public/                        # 앱 아이콘, 활동별 방 이미지(room_*.png)
+├── public/                        # 앱 아이콘, 기본 방(room.png), 프리셋별 방 이미지(rooms/<키>.png)
 ├── src/
 │   ├── main.tsx                   # 엔트리. AuthProvider > AuthGate > App
 │   ├── App.tsx                    # 헤더 + 탭 전환 + 스케줄 페이지
@@ -106,7 +107,8 @@ cube_scheduler/
 │   │   ├── WeekStrip.tsx          # 이번 주 미니 스트립
 │   │   ├── QuickMemo.tsx          # 날짜별 빠른 메모 (자동 저장)
 │   │   ├── HourDetail.tsx         # 시간 상세 패널
-│   │   ├── ActivityPalette.tsx    # 활동 팔레트
+│   │   ├── ActivityPalette.tsx    # 활동 팔레트 (편집·방 이미지 피커·직접 만들기)
+│   │   ├── ActivityPickerModal.tsx # 카탈로그에서 활동 고르기
 │   │   ├── Calendar.tsx           # 달력
 │   │   ├── KanbanBoard/Column/Card.tsx   # 칸반 보드
 │   │   ├── TicketModal.tsx        # 티켓 / 기록 편집 모달
@@ -193,8 +195,10 @@ onAuthStateChanged
 ### 데이터 모델
 
 ```ts
-interface Activity { id: string; name: string; color: string; order: number; archived?: boolean }
+interface Activity { id: string; name: string; color: string; order: number; archived?: boolean; presetId?: string; roomImage?: string }
 // 팔레트에서 지운 활동은 삭제하지 않고 archived 로 숨긴다 (과거 기록이 id 로 참조하므로)
+// presetId: 카탈로그 프리셋 연결 (프리셋에서 담으면 id === presetId). 방 이미지·세부 폼은 이름이 아니라 여기서 결정된다.
+// roomImage: 방 이미지 키를 직접 고른 경우 (rooms/<키>.png)
 
 interface DaySegment { start: number; end: number; activityId: string; record?: SlotRecord }  // [start, end) 분, 10분 정렬
 interface DayData { v: 2; date: string; goal: string; segments: DaySegment[] }            // 저장 형식
@@ -216,7 +220,7 @@ interface Routine { id: string; activityId: string; startMin: number; endMin: nu
 type WeeklyRoutines = Record<'weekday' | 'weekend' | DayOfWeek, Routine[]>
 ```
 
-**마이그레이션**: 예전 형식(v1: `slots` 맵에 활동 이름·색 문자열, 루틴에 `name/color`)은 앱을 열면 활동 팔레트가 로드된 뒤 자동으로 v2 로 변환된다(`src/store/migrations.ts`). 팔레트에 없는 이름은 그 이름·색으로 보관(archived) 활동을 만들어 참조를 잇는다. 변환 전 문서도 화면에는 그대로 보인다. 백업 가져오기는 `src/lib/schema.ts` 의 zod 스키마로 검증하고 통과한 문서만 반영한다.
+**마이그레이션**: 예전 형식(v1: `slots` 맵에 활동 이름·색 문자열, 루틴에 `name/color`)은 앱을 열면 활동 팔레트가 로드된 뒤 자동으로 v2 로 변환된다(`src/store/migrations.ts`). 팔레트에 없는 이름은 그 이름·색으로 보관(archived) 활동을 만들어 참조를 잇는다. 이름이 카탈로그 프리셋과 같은 활동에는 `presetId` 를 붙이고(`커피, 음악, 독서` → `커피`), 수면이 팔레트에 없으면 넣어 준다. 변환 전 문서도 화면에는 그대로 보인다. 백업 가져오기는 `src/lib/schema.ts` 의 zod 스키마로 검증하고 통과한 문서만 반영한다.
 
 ### 화면 구성
 

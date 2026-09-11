@@ -20,6 +20,8 @@ export const ActivitySchema = z.object({
   color: z.string(),
   order: z.number(),
   archived: z.boolean().optional(),
+  presetId: z.string().optional(),
+  roomImage: z.string().optional(),
 })
 export const ActivitiesSchema = z.array(ActivitySchema)
 

@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid'
 import type { Activity, DayData, LegacyRoutine, WeeklyRoutines } from '../types/schedule'
 import { SLEEP_ACTIVITY, WEEKLY_KEYS } from '../types/schedule'
 import { isLegacyDay, migrateLegacyDay, migrateWeekly, weeklyNeedsMigration, type ActivityIdByName } from '../lib/day'
+import { presetByName, activityFromPreset } from '../lib/activityCatalog'
 import { storage } from '../lib/storage'
 import { useDocStore } from './index'
 
@@ -22,15 +23,51 @@ function currentActivities(): Activity[] {
   return (useDocStore.getState().docs['activities'] as Activity[] | null | undefined) ?? []
 }
 
-/** 이름으로 활동 id 를 찾고, 없으면 만들어서 팔레트 문서에 즉시 반영 */
+/** 이름으로 활동 id 를 찾고, 없으면 만들어서 팔레트 문서에 즉시 반영. 프리셋 이름이면 프리셋 id 로 만든다. */
 const idByName: ActivityIdByName = (name, color) => {
   if (name === SLEEP_ACTIVITY.name) return SLEEP_ACTIVITY.id
   const acts = currentActivities()
   const hit = acts.find(a => a.name === name)
   if (hit) return hit.id
+  const preset = presetByName(name)
+  if (preset) {
+    const existing = acts.find(a => a.id === preset.id || a.presetId === preset.id)
+    if (existing) return existing.id
+    const created: Activity = { ...activityFromPreset(preset, acts.length), archived: true }
+    useDocStore.getState().write('activities', [...acts, created])
+    return created.id
+  }
   const created: Activity = { id: uuidv4(), name, color: color || '#8e8e93', order: acts.length, archived: true }
   useDocStore.getState().write('activities', [...acts, created])
   return created.id
+}
+
+/**
+ * 프리셋 연결: 이름이 카탈로그와 같은 활동에 presetId 를 붙인다 (LEGACY_NAME_MAP 에 있으면 이름도 바꾼다).
+ * day 문서는 건드리지 않는다 (id 그대로). 바뀐 활동 수를 돌려준다.
+ */
+function linkPresets(): number {
+  let acts = currentActivities()
+  if (acts.length === 0) return 0
+  // 수면은 예전엔 팔레트 밖의 특수 칩이었다. 이제 일반 프리셋이므로 문서에 없으면 맨 앞에 넣어 준다.
+  if (!acts.some(a => a.id === SLEEP_ACTIVITY.id)) {
+    const sleep = presetByName(SLEEP_ACTIVITY.name)!
+    acts = [{ ...activityFromPreset(sleep, -1) }, ...acts]
+    useDocStore.getState().write('activities', acts)
+  }
+  const taken = new Set(acts.map(a => a.presetId).filter(Boolean))
+  let changed = 0
+  const next = acts.map(a => {
+    if (a.presetId) return a
+    const p = presetByName(a.name)
+    if (!p || taken.has(p.id)) return a
+    taken.add(p.id)
+    changed++
+    if (p.name !== a.name) console.info(`[migration] 활동 이름 변경: "${a.name}" → "${p.name}"`)
+    return { ...a, presetId: p.id, name: p.name }
+  })
+  if (changed) useDocStore.getState().write('activities', next)
+  return changed
 }
 
 async function migrateDays(): Promise<number> {
@@ -91,8 +128,9 @@ export function ensureMigrated(): void {
     try {
       const days = await migrateDays()
       const routines = await migrateRoutines()
-      if (days || routines) {
-        console.info(`[migration] v1 → v2: day ${days}건, routines ${routines ? '변환' : '유지'}`)
+      const linked = linkPresets()
+      if (days || routines || linked) {
+        console.info(`[migration] v1 → v2: day ${days}건, routines ${routines ? '변환' : '유지'}, 프리셋 연결 ${linked}건`)
         await storage.flush()
       }
     } catch (err) {

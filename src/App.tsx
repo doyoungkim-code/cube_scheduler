@@ -11,7 +11,7 @@ import WeekStrip from './components/WeekStrip'
 import QuickMemo from './components/QuickMemo'
 import HabitChecklist from './components/HabitChecklist'
 import Toaster from './components/Toaster'
-import { useDayData, useDaysSlots } from './hooks/useDayData'
+import { useDayData, useDaysSlots, useActivities } from './hooks/useDayData'
 import { useKanbanData } from './hooks/useKanbanData'
 import { useMediaQuery, MQ_MOBILE, MQ_WIDE } from './hooks/useMediaQuery'
 import { useNowMinute } from './hooks/useNow'
@@ -19,6 +19,7 @@ import { undoLast } from './store'
 import { toastUndo } from './store/ui'
 import { dateKeyOf, shiftDateKey, parseDateKey } from './lib/slots'
 import { SLEEP_ACTIVITY, ERASER_ACTIVITY } from './types/schedule'
+import { imageKeyOf } from './lib/activityCatalog'
 import { initialViewFromLocation, type ViewId } from './types/navigation'
 import PatternAnalysisView from './pages/PatternAnalysisView'
 import HabitTrackerView from './pages/HabitTrackerView'
@@ -27,18 +28,6 @@ import SettingsView from './pages/SettingsView'
 import './styles/global.css'
 
 const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토']
-
-const ROOM_MAP: Record<string, string> = {
-  '알고리즘': './room_algo.png',
-  '프로젝트': './room_coding.png',
-  '커피, 음악, 독서': './room_coffee.png',
-  '기록': './room_diary.png',
-  '식사': './room_eat.png',
-  '영어 공부': './room_english.png',
-  '운동': './room_exercise.png',
-  '샤워': './room_outside.png',
-  '수면': './room_sleep.png',
-}
 
 /** Ctrl+Z 가 동작하는 뷰 (편집 화면만) */
 const UNDO_VIEWS: ReadonlySet<ViewId> = new Set<ViewId>(['scheduler', 'habit-tracker'])
@@ -50,6 +39,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(today)
   const data = useDayData(selectedDate)
   const [todaySlotsDoc] = useDaysSlots(useMemo(() => [today], [today]))   // 방 카드용 "지금 하는 일" (선택 날짜와 무관)
+  const [allActivities] = useActivities()   // 방 이미지 조회용 (보관된 활동 포함)
   const kanban = useKanbanData()
   const [showCalendar, setShowCalendar] = useState(false)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
@@ -78,11 +68,10 @@ function App() {
   const isToday = selectedDate === today
   const ready = data.loaded && kanban.loaded
 
-  const selectedActivity = selectedActivityId === SLEEP_ACTIVITY.id
-    ? SLEEP_ACTIVITY
-    : selectedActivityId === ERASER_ACTIVITY.id
+  const selectedActivity = selectedActivityId === ERASER_ACTIVITY.id
     ? ERASER_ACTIVITY
-    : data.activities.find(a => a.id === selectedActivityId) ?? null
+    : data.activities.find(a => a.id === selectedActivityId)
+      ?? (selectedActivityId === SLEEP_ACTIVITY.id ? SLEEP_ACTIVITY : null)
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date)
@@ -123,7 +112,8 @@ function App() {
   const todaySlots = isToday ? data.day.slots : (todaySlotsDoc ?? {})
   const currentSlot = todaySlots[nowSlotMin]
   const currentLabel = currentSlot?.label ?? ''
-  const roomImg = ROOM_MAP[currentLabel] ?? './room.png'
+  const currentActivity = currentSlot ? (allActivities.find(a => a.id === currentSlot.activityId) ?? { id: currentSlot.activityId }) : null
+  const roomImageKey = imageKeyOf(currentActivity)
 
   let page: React.ReactNode
   switch (currentView) {
@@ -162,6 +152,7 @@ function App() {
             selectedId={selectedActivityId}
             onSelect={setSelectedActivityId}
             onChange={data.setActivities}
+            autoOpenWhenEmpty={ready}
           />
         )
         const timeline = isMobile ? (
@@ -201,7 +192,7 @@ function App() {
           />
         )
         const roomCard = (
-          <RoomCard roomImg={roomImg} currentLabel={currentLabel} currentColor={currentSlot?.color} />
+          <RoomCard imageKey={roomImageKey} currentLabel={currentLabel} currentColor={currentSlot?.color} />
         )
         const memo = <QuickMemo key={selectedDate} dateKey={selectedDate} />
 
